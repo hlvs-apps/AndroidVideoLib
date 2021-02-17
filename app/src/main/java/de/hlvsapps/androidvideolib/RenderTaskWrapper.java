@@ -11,6 +11,13 @@ public class RenderTaskWrapper {
         this.frameInPartFrom=frameInPartFrom;
         this.frameInPartTo=frameInPartTo;
     }
+    public RenderTaskWrapper(RenderTask task,int frameInPartFrom,int frameInPartTo,int frameInProjectFrom,int frameInProjectTo){
+        this.renderTask=task;
+        this.frameInPartFrom=frameInPartFrom;
+        this.frameInPartTo=frameInPartTo;
+        this.frameInProjectFrom=frameInProjectFrom;
+        this.frameInProjectTo=frameInProjectTo;
+    }
 
     public RenderTaskWrapper setFrameInProjectFrom(int frameInProjectFrom) {
         this.frameInProjectFrom = frameInProjectFrom;

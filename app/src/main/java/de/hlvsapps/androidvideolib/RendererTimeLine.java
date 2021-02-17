@@ -34,7 +34,7 @@ public class RendererTimeLine {
 
     public void setUriIdentifierPairsLength(VideoProj proj){
         int i=0;
-        while(i<=uriIdentifierPairs.size()){
+        while(i<uriIdentifierPairs.size()){
             try {
                 uriIdentifierPairs.set(i,
                         uriIdentifierPairs.get(i).setLengthInFrames(

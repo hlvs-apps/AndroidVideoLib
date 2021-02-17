@@ -13,6 +13,7 @@ import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
 import org.jcodec.common.model.ColorSpace;
+import org.jcodec.common.model.Picture;
 import org.jcodec.common.model.Rational;
 import org.jetbrains.annotations.NotNull;
 
@@ -65,10 +66,12 @@ public class LastRenderer extends Worker {
             stream1 = (FileOutputStream) re.get(0);
             ch = new FileChannelWrapper(stream1.getChannel());
             enc = SequenceEncoder.createWithFps(ch, proj.getFps());
-            int length=getRealList().size();
+            String[] reallist=  getRealList().toArray(new String[0]);
+            int length=reallist.length;
             int i=0;
-            for (String name : getRealList()) {
+            for (String name : reallist) {
                 //Amend
+                utils.LogD(String.valueOf(i));
                 enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromInternalExportStorageAndDelete(proj.getContext(), name), ColorSpace.RGB));
                 proj.setNotificationProgress(length, i, false);
                 setProgressAsync(new Data.Builder()
@@ -76,10 +79,10 @@ public class LastRenderer extends Worker {
                         .putInt("max", length)
                         .build());
                 i++;
-                enc.finish();
-                ch.close();
-                stream1.close();
             }
+            enc.finish();
+            ch.close();
+            stream1.close();
         } catch (FileNotFoundException e) {
             utils.LogE(e);
             return Result.failure();

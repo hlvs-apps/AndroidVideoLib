@@ -53,8 +53,10 @@ public class Renderer extends Worker {
         if(which_renderer==-1) return Result.failure();
         RenderTaskWrapperWithUriIdentifierPairs wrapper=proj.getRendererTimeLine().getRenderTasksWithMatchingUriIdentifierPairs(proj).get(which_renderer);
         int from=wrapper.getFrameInProjectFrom();
-        int to=(wrapper.getFrameInProjectTo()!=-1)?wrapper.getFrameInProjectTo():proj.getLength();
-        to=24;
+        int to=wrapper.getFrameInProjectTo();
+        utils.LogD(String.valueOf(to));
+        if(to==-1)to=proj.getLength();
+        utils.LogD(String.valueOf(to));
         proj.inputs_from_last_render[which_renderer]=new ArrayList<>();
         int actual_num_of_saved_image=0;
         for(int i=from;i<=to;i++){
@@ -68,10 +70,14 @@ public class Renderer extends Worker {
                 i_for_video++;
                 bitmap1.add(new VideoBitmap(
                         utils.readFromInternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
-                for(Bitmap bitmap:wrapper.getRenderTask().render(bitmap0,bitmap1,i)){
-                    String fileOutName= which_renderer +"_"+ actual_num_of_saved_image;
-                    utils.saveToInternalExportStorage(bitmap,proj.getContext(),fileOutName);
-                    proj.inputs_from_last_render[which_renderer].add(fileOutName);
+                try {
+                    for (Bitmap bitmap : wrapper.getRenderTask().render(bitmap0, bitmap1, i)) {
+                        String fileOutName = which_renderer + "_" + actual_num_of_saved_image;
+                        utils.saveToInternalExportStorage(bitmap, proj.getContext(), fileOutName);
+                        proj.inputs_from_last_render[which_renderer].add(fileOutName);
+                        actual_num_of_saved_image++;
+                    }
+                }catch (NullPointerException ignored){ ;
                 }
             }
         }

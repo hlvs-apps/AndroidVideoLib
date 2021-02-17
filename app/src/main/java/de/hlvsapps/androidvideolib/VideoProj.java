@@ -230,6 +230,7 @@ public class VideoProj {
 
     void startLastRender(int which_renderer){
         which_task_finished[which_renderer]=true;
+        LastRenderer.proj=this;
         if(utils.areAllTrue(which_task_finished)){
             Renderer.proj=this;
             Constraints constraints;
