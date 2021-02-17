@@ -1,2 +1,8 @@
+/*
+ * Copyright hlvs-apps
+ * This is a part of AndroidVideoLib
+ * Licensed under Apache 2.0
+ */
+
 include ':app'
 rootProject.name = "AndroidVideoLib"

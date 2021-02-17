@@ -1,5 +1,10 @@
-package de.hlvsapps.androidvideolib;
+/*-----------------------------------------------------------------------------
+ - Copyright hlvs-apps                                                        -
+ - This is a part of AndroidVideoLib                                          -
+ - Licensed under Apache 2.0                                                  -
+ -----------------------------------------------------------------------------*/
 
+package de.hlvsapps.androidvideolib;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,7 +20,9 @@ import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
+import org.jcodec.common.model.ColorSpace;
 import org.jcodec.common.model.Picture;
+import org.jcodec.scale.Yuv420pToRgb;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileInputStream;
@@ -62,15 +69,25 @@ public class PreRenderer extends Worker {
             int length = workList.size();
             ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
             int j=0;
+            Yuv420pToRgb ytb = new Yuv420pToRgb();
             for (UriIdentifierPair i : workList) {
                 String name = i.getUriIdentifier().getIdentifier();
                 int video_length=i.getLengthInFrames();
                 try (FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(i.getUriIdentifier().getUri(), "r").getFileDescriptor())).getChannel())) {
                     FrameGrab grab = FrameGrab.createFrameGrab(ch);
                     int ii = 0;
-                    while (null != (proj.pic0 = grab.getNativeFrame())) {
+                    Picture picture;
+                    while (null != (picture = grab.getNativeFrame())) {
+                        if (picture.getColor() == ColorSpace.YUV420) {
+                            Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
+                            ytb.transform(picture, pic3);
+                            picture = pic3;
+                        }
+                        if(ii==0 && proj.pic0==null){
+                            proj.pic0=picture;
+                        }
                         utils.LogI("Save Image");
-                        Bitmap bitmap = AndroidUtil.toBitmap(proj.pic0);
+                        Bitmap bitmap = AndroidUtil.toBitmap(picture);
                         utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
                         proj.setNotificationProgress(length*100, (int) j*(ii/video_length)*10, false);
                         setProgressAsync(new Data.Builder()

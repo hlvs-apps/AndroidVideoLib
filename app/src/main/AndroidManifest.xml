@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright hlvs-apps
+  ~ This is a part of AndroidVideoLib
+  ~ Licensed under Apache 2.0
+  -->
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.hlvsapps.androidvideolib">
 

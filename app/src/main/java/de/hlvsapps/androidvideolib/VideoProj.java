@@ -1,3 +1,9 @@
+/*-----------------------------------------------------------------------------
+ - Copyright hlvs-apps                                                        -
+ - This is a part of AndroidVideoLib                                          -
+ - Licensed under Apache 2.0                                                  -
+ -----------------------------------------------------------------------------*/
+
 package de.hlvsapps.androidvideolib;
 
 import android.app.NotificationChannel;
@@ -34,7 +40,7 @@ public class VideoProj {
     NotificationCompat.Builder builder;
 
     List<String> [] inputs_from_last_render;
-    Picture pic0;
+    Picture pic0=null;
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;

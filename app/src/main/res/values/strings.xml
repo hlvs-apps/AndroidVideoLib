@@ -1,3 +1,9 @@
+<!--
+  ~ Copyright hlvs-apps
+  ~ This is a part of AndroidVideoLib
+  ~ Licensed under Apache 2.0
+  -->
+
 <resources>
     <string name="app_name">AndroidVideoLib</string>
 </resources>

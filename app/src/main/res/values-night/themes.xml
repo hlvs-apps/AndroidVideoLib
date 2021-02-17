@@ -1,3 +1,9 @@
+<!--
+  ~ Copyright hlvs-apps
+  ~ This is a part of AndroidVideoLib
+  ~ Licensed under Apache 2.0
+  -->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.AndroidVideoLib" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
