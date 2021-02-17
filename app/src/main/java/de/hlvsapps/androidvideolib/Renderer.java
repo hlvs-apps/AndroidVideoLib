@@ -45,6 +45,7 @@ public class Renderer extends Worker {
     private synchronized Result renderSynchronus() {
         //setForegroundAsync(new ForegroundInfo(VideoProj.NOTIFICATION_ID, proj.builder.build()));
         //Enable Wakelook
+        utils.LogI("Render");
         PowerManager powerManager = (PowerManager) proj.getContext().getSystemService(POWER_SERVICE);
         proj.setWakeLock(powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
         proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);

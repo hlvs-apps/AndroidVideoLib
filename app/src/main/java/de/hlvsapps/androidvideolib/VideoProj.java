@@ -231,7 +231,25 @@ public class VideoProj {
     void startLastRender(int which_renderer){
         which_task_finished[which_renderer]=true;
         if(utils.areAllTrue(which_task_finished)){
+            Renderer.proj=this;
+            Constraints constraints;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                constraints = new Constraints.Builder()
+                        .setRequiresCharging(false)
+                        .setRequiresBatteryNotLow(false)
+                        .setRequiresDeviceIdle(false)
+                        .build();
+            }else{
+                constraints = new Constraints.Builder()
+                        .setRequiresCharging(false)
+                        .setRequiresBatteryNotLow(false)
+                        .build();
+            }
 
+            OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(LastRenderer.class)
+                    .setConstraints(constraints)
+                    .build();
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render", ExistingWorkPolicy.REPLACE, renderRequest);
         }
     }
 

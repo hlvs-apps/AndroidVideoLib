@@ -55,6 +55,8 @@ public class PreRenderer extends Worker {
         proj.setWakeLock( powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
         proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
 
+        utils.LogI("PreRender");
+
         try {
             List<UriIdentifierPair> workList = proj.getAllUriIdentifierPairsFromInput();
             int length = workList.size();
@@ -68,6 +70,7 @@ public class PreRenderer extends Worker {
                     Picture picture;
                     int ii = 0;
                     while (null != (picture = grab.getNativeFrame())) {
+                        utils.LogI("Save Image");
                         Bitmap bitmap = AndroidUtil.toBitmap(picture);
                         utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
                         proj.setNotificationProgress(length*100, (int) j*(ii/video_length)*10, false);
