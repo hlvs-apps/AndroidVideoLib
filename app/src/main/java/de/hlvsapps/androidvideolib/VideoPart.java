@@ -31,7 +31,7 @@ public class VideoPart {
     public void addRenderTaskWrapper(RenderTaskWrapper wrapper){
         renderTaskWrappers.add(wrapper
                 .setFrameInProjectFrom(wrapper.getFrameInPartFrom()+frameStartInProject)
-                .setFrameInProjectTo((wrapper.getFrameInPartTo()!=-1)?wrapper.getFrameInPartTo()+frameStartInProject:-1));
+                .setFrameInProjectTo((wrapper.getFrameInPartTo()!=-1)?(wrapper.getFrameInPartTo()+frameStartInProject):-1));
     }
 
     public List<VideoSegmentWithTime> getSegments() {
