@@ -72,7 +72,7 @@ public class LastRenderer extends Worker {
             for (String name : reallist) {
                 //Amend
                 utils.LogD(String.valueOf(i));
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromInternalExportStorageAndDelete(proj.getContext(), name), ColorSpace.RGB));
+                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromInternalExportStorageAndDelete(proj.getContext(), name), proj.pic0.getColor()));
                 proj.setNotificationProgress(length, i, false);
                 setProgressAsync(new Data.Builder()
                         .putInt("progress",i)

@@ -67,11 +67,10 @@ public class PreRenderer extends Worker {
                 int video_length=i.getLengthInFrames();
                 try (FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(i.getUriIdentifier().getUri(), "r").getFileDescriptor())).getChannel())) {
                     FrameGrab grab = FrameGrab.createFrameGrab(ch);
-                    Picture picture;
                     int ii = 0;
-                    while (null != (picture = grab.getNativeFrame())) {
+                    while (null != (proj.pic0 = grab.getNativeFrame())) {
                         utils.LogI("Save Image");
-                        Bitmap bitmap = AndroidUtil.toBitmap(picture);
+                        Bitmap bitmap = AndroidUtil.toBitmap(proj.pic0);
                         utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
                         proj.setNotificationProgress(length*100, (int) j*(ii/video_length)*10, false);
                         setProgressAsync(new Data.Builder()

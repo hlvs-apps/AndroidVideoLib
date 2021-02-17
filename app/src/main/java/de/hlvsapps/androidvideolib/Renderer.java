@@ -2,6 +2,7 @@ package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Picture;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;

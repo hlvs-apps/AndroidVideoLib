@@ -18,6 +18,8 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import org.jcodec.common.model.Picture;
+
 import java.util.List;
 
 public class VideoProj {
@@ -32,6 +34,7 @@ public class VideoProj {
     NotificationCompat.Builder builder;
 
     List<String> [] inputs_from_last_render;
+    Picture pic0;
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
