@@ -51,6 +51,17 @@ afterEvaluate {
                 //artifactId = 'custom-artifact'
                 version = android.defaultConfig.versionName // or just '1.0'
             }
+            debug(MavenPublication) {
+                from components.debug
+                // Adds javadocs and sources as separate jars.
+                artifact androidJavadocsJar
+                artifact androidSourcesJar
+
+                // You can customize attributes of the publication here or in module's build.gradle file.
+                //groupId = 'com.example'
+                //artifactId = 'custom-artifact'
+                version = android.defaultConfig.versionName // or just '1.0'
+            }
         }
     }
 }
