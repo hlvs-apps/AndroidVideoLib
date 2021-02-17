@@ -64,5 +64,8 @@ publishing {
             // otherwise it would use version from `android { defaultConfig { ... } }` by default.
             //version = '1.0'
         }
+        debug(MavenPublication){
+            groupId 'de.hlvsapps.androidvideolib'
+        }
     }
 }
