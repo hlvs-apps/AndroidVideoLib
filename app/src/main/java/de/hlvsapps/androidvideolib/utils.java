@@ -46,13 +46,48 @@ public class utils {
         }
     }
 
-    public static Bitmap readFromInternalStorageAndDelete(Context c, String name){
+    public static boolean areAllTrue(boolean... array)
+    {
+        for(boolean b : array) if(!b) return false;
+        return true;
+    }
+
+    public static void saveToInternalExportStorage(Bitmap bitmapImage,Context c,String name){
+        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+        // path to /data/data/yourapp/app_data/imageDir
+        File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
+        // Create imageDir
+        File mypath=new File(directory,name);
+        try (FileOutputStream fos= new FileOutputStream(mypath)){
+            // Use the compress method on the BitMap object to write image to the OutputStream
+            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        } catch (Exception e) {
+            LogE(e);
+        }
+    }
+
+    public static Bitmap readFromInternalExportStorageAndDelete(Context c, String name){
+        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+        File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
+        File f=new File(directory, name);
+        if(f.exists()) {
+            Bitmap b = BitmapFactory.decodeFile(f.getPath());
+            return b;
+        }else{
+            return null;
+        }
+    }
+
+    public static Bitmap readFromInternalStorage(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         File directory = cw.getDir("imageCacheDirVideoExport", Context.MODE_PRIVATE);
         File f=new File(directory, name);
-        Bitmap b= BitmapFactory.decodeFile(f.getPath());
-        utils.LogI("Deleted: "+f.delete());
-        return b;
+        if(f.exists()) {
+            Bitmap b = BitmapFactory.decodeFile(f.getPath());
+            return b;
+        }else{
+            return null;
+        }
     }
 
     public static int getMP4LengthInFrames(VideoProj proj,Uri src) throws IOException {

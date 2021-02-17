@@ -13,36 +13,64 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.work.Constraints;
+import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-import java.util.ArrayList;
+import org.jcodec.common.model.Rational;
+
 import java.util.List;
 
 public class VideoProj {
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
+    public static final String DATA_ID_RENDERER="DATA_ID_RENDERER";
     //TODO CHANGE
     public static final String WAKE_LOCK_ID = "AndroidVideoLib::RenderLock";
 
     public static final int NOTIFICATION_ID =1034;
+
     NotificationManagerCompat notificationManager;
     NotificationCompat.Builder builder;
+
+    List<String> [] inputs_from_last_render;
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
     private PowerManager.WakeLock wakeLock;
     private int length;
 
+    private Rational fps;
+
+    private boolean[] which_task_finished;
+
     private RendererTimeLine rendererTimeLine;
 
-    public VideoProj(String outputname, List<VideoPart> input, AppCompatActivity context){
+    public VideoProj(String outputname, List<VideoPart> input, Rational fps, AppCompatActivity context){
         this.output=outputname;
         this.input=input;
+        this.fps=fps;
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         updateRenderTimeLine();
+    }
+
+    public VideoProj(List<VideoPart> input,Rational fps, AppCompatActivity context){
+        this.input=input;
+        this.fps=fps;
+        this.context=context;
+        this.rendererTimeLine=new RendererTimeLine();
+        this.rendererTimeLine.addAllParts(this.input);
+        updateRenderTimeLine();
+    }
+
+    public void setFps(Rational fps) {
+        this.fps = fps;
+    }
+
+    public Rational getFps() {
+        return fps;
     }
 
     public void addInput(VideoPart input){
@@ -54,10 +82,6 @@ public class VideoProj {
         this.input.addAll(inputs);
         this.rendererTimeLine.addAllParts(inputs);
         updateRenderTimeLine();
-    }
-
-    List<UriIdentifier> getAllUriIdentifiersFromInputs(){
-        return rendererTimeLine.getAllUrisFromUriIdentifiers();
     }
 
     List<UriIdentifierPair> getAllUriIdentifierPairsFromInput(){
@@ -122,6 +146,10 @@ public class VideoProj {
         WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
     }
 
+    public RendererTimeLine getRendererTimeLine() {
+        return rendererTimeLine;
+    }
+
     public void askForBackgroundPermissions(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String packageName = context.getPackageName();
@@ -140,7 +168,7 @@ public class VideoProj {
 
 
     /**
-     * Render this Project to a Output Uri
+     * Render this Project to a Output String
      * Please use <pre>{@code setNotificationProgress(max, progress1, progress1 ==-1);}</pre> to update Status progress.
      *
      * @param output The Output File Name as String. New Output of this Proj will become that.
@@ -185,10 +213,32 @@ public class VideoProj {
                     .setRequiresBatteryNotLow(false)
                     .build();
         }
-        OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(Renderer.class)
-                .setConstraints(constraints)
-                .build();
-        WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
+
+        int i=0;
+        List<RenderTaskWrapperWithUriIdentifierPairs> list=rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
+        inputs_from_last_render = new List[list.size()];
+        which_task_finished=new boolean[list.size()];
+        for(RenderTaskWrapperWithUriIdentifierPairs ignored:list) {
+            Data.Builder b = new Data.Builder();
+            b.putInt(DATA_ID_RENDERER, i);
+            OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
+                    .setConstraints(constraints)
+                    .setInputData(b.build())
+                    .build();
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render"+i, ExistingWorkPolicy.REPLACE, renderRequest);
+            i++;
+        }
+    }
+
+    void startLastRender(int which_renderer){
+        which_task_finished[which_renderer]=true;
+        if(utils.areAllTrue(which_task_finished)){
+
+        }
+    }
+
+    public int getLength() {
+        return length;
     }
 
     void setNotificationProgress(int max, int progress, boolean finsih){

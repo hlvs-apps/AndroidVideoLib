@@ -28,7 +28,6 @@ import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
 
 public class PreRenderer extends Worker {
     static VideoProj proj;
-    static boolean allredy_running=false;
 
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -38,13 +37,11 @@ public class PreRenderer extends Worker {
 
     @NotNull
     public ListenableWorker.Result doWork(){
-        if(proj!=null && !allredy_running) {
-            allredy_running=true;
+        if(proj!=null) {
             try {
                 return preRender();
             } catch (Exception e) {
                 utils.LogE(e);
-                allredy_running = false;
                 return ListenableWorker.Result.failure();
             }
         }else{

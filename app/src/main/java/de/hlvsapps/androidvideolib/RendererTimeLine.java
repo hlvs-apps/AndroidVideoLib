@@ -68,8 +68,8 @@ public class RendererTimeLine {
         sortIdentifierPairsByTime();
         List<RenderTaskWrapperWithUriIdentifierPairs> renderTaskWrapperWithUriIdentifierPairs = new ArrayList<>();
         for(RenderTaskWrapper w:renderTaskWrappers){
-            int start=w.getFrameInPartFrom();
-            int end=w.getFrameInPartTo();
+            int start=w.getFrameInProjectFrom();
+            int end=w.getFrameInProjectTo();
             if(end==-1){
                 end=videoLengthInFrames;
             }
