@@ -18,8 +18,6 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-import org.jcodec.common.model.Rational;
-
 import java.util.List;
 
 public class VideoProj {
