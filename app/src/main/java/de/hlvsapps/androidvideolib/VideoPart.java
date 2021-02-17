@@ -8,7 +8,18 @@ public class VideoPart {
     private final List<VideoSegmentWithTime> segments;
     private int frameStartInProject;
     public VideoPart(List<RenderTaskWrapper> renderTaskWrappers, int frameStartInProject){
-        this.renderTaskWrappers=renderTaskWrappers;
+        //this.renderTaskWrappers=renderTaskWrappers;
+        this.renderTaskWrappers=new ArrayList<>();
+        for(RenderTaskWrapper w:renderTaskWrappers){
+            this.addRenderTaskWrapper(w);
+        }
+        this.frameStartInProject=frameStartInProject;
+        segments=new ArrayList<>();
+    }
+    public VideoPart(RenderTaskWrapper renderTaskWrapper, int frameStartInProject){
+        //this.renderTaskWrappers=renderTaskWrappers;
+        this.renderTaskWrappers=new ArrayList<>();
+        this.addRenderTaskWrapper(renderTaskWrapper);
         this.frameStartInProject=frameStartInProject;
         segments=new ArrayList<>();
     }
