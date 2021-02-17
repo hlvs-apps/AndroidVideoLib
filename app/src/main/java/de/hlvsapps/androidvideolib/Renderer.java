@@ -54,6 +54,7 @@ public class Renderer extends Worker {
         RenderTaskWrapperWithUriIdentifierPairs wrapper=proj.getRendererTimeLine().getRenderTasksWithMatchingUriIdentifierPairs(proj).get(which_renderer);
         int from=wrapper.getFrameInProjectFrom();
         int to=(wrapper.getFrameInProjectTo()!=-1)?wrapper.getFrameInProjectTo():proj.getLength();
+        to=24;
         proj.inputs_from_last_render[which_renderer]=new ArrayList<>();
         int actual_num_of_saved_image=0;
         for(int i=from;i<=to;i++){
