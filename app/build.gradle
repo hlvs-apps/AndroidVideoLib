@@ -1,12 +1,12 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
+    id 'maven-publish'
 }
 
 android {
     compileSdkVersion 29
 
     defaultConfig {
-        applicationId "de.hlvsapps.androidvideolib"
         minSdkVersion 15
         targetSdkVersion 29
         versionCode 1
@@ -17,8 +17,15 @@ android {
 
     buildTypes {
         release {
+            debuggable false
             minifyEnabled true
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            multiDexEnabled false
+        }
+
+        debug {
+            debuggable true
         }
     }
     compileOptions {
@@ -38,4 +45,24 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+}
+
+apply from: '../maven-publish-helper.gradle'
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            // Specify own groupId as package name of your library,
+            // otherwise it would just use project's name (=name of the root directory) by default.
+            groupId 'de.hlvsapps.androidvideolib'
+
+            // Specify custom artifactId if needed,
+            // otherwise it would use module's name by default.
+            //artifactId 'custom-artifact'
+
+            // You can specify custom version,
+            // otherwise it would use version from `android { defaultConfig { ... } }` by default.
+            //version = '1.0'
+        }
+    }
 }

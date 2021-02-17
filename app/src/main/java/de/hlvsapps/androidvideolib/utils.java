@@ -71,8 +71,7 @@ public class utils {
         File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
         File f=new File(directory, name);
         if(f.exists()) {
-            Bitmap b = BitmapFactory.decodeFile(f.getPath());
-            return b;
+            return BitmapFactory.decodeFile(f.getPath());
         }else{
             return null;
         }
@@ -83,8 +82,7 @@ public class utils {
         File directory = cw.getDir("imageCacheDirVideoExport", Context.MODE_PRIVATE);
         File f=new File(directory, name);
         if(f.exists()) {
-            Bitmap b = BitmapFactory.decodeFile(f.getPath());
-            return b;
+            return BitmapFactory.decodeFile(f.getPath());
         }else{
             return null;
         }
