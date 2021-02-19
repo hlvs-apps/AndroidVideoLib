@@ -94,7 +94,7 @@ public class Renderer extends Worker {
                         proj.inputs_from_last_render[which_renderer].add(fileOutName);
                         actual_num_of_saved_image++;
                     }
-                }catch (NullPointerException ignored){ ;
+                }catch (NullPointerException ignored){
                 }
             }
         }

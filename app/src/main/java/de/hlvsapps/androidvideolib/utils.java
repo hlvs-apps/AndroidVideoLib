@@ -87,7 +87,9 @@ public class utils {
         File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
         File f=new File(directory, name);
         if(f.exists()) {
-            return BitmapFactory.decodeFile(f.getPath());
+            Bitmap d=BitmapFactory.decodeFile(f.getPath());
+            LogD(String.valueOf(f.delete()));
+            return d;
         }else{
             return null;
         }
@@ -110,6 +112,16 @@ public class utils {
         MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
         DemuxerTrack video_track = demuxer.getVideoTrack();
         int length = video_track.getMeta().getTotalFrames();
+        ch.close();
+        return length;
+    }
+
+    public static double getMP4LengthInSeconds(VideoProj proj,Uri src) throws IOException {
+        ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
+        FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(src, "r").getFileDescriptor())).getChannel());
+        MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
+        DemuxerTrack video_track = demuxer.getVideoTrack();
+        double length = video_track.getMeta().getTotalDuration();
         ch.close();
         return length;
     }

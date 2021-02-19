@@ -74,12 +74,14 @@ public class LastRenderer extends Worker {
         SequenceEncoder enc=null;
         FileChannelWrapper ch=null;
         FileOutputStream stream1=null;
+        ParcelFileDescriptor d=null;
         try {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
             Date now = new Date();
             String fileName = "AndroidVideoLib_Export_" + formatter.format(now);
             List<Object> re = utils.fileOutputStreamFromName(proj.getContext(), fileName);
             stream1 = (FileOutputStream) re.get(0);
+            d= (ParcelFileDescriptor) re.get(1);
             ch = new FileChannelWrapper(stream1.getChannel());
             enc = SequenceEncoder.createWithFps(ch, proj.getFps());
             String[] reallist=  getRealList().toArray(new String[0]);
@@ -99,6 +101,7 @@ public class LastRenderer extends Worker {
             enc.finish();
             ch.close();
             stream1.close();
+            if(d!=null)d.close();
         } catch (FileNotFoundException e) {
             utils.LogE(e);
             return Result.failure();
@@ -107,18 +110,23 @@ public class LastRenderer extends Worker {
             return Result.failure();
         }finally {
             try {
-                enc.finish();
+                if(enc!=null)enc.finish();
             } catch (Exception e) {
                 utils.LogE(e);
             }
             try {
-                ch.close();
+                if(ch!=null)ch.close();
             } catch (Exception e) {
                 utils.LogE(e);
             }
             try {
-                stream1.close();
+                if(stream1!=null)stream1.close();
             } catch (Exception e) {
+                utils.LogE(e);
+            }
+            try {
+                if(d!=null)d.close();
+            }catch (Exception e){
                 utils.LogE(e);
             }
         }
