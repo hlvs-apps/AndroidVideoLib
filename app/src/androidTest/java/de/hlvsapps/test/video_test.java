@@ -143,7 +143,7 @@ public class video_test extends AppCompatActivity {
                             ), 0
                     )
             );
-            VideoProj videoProj = new VideoProj(Collections.singletonList(part), new Rational(25, 1), this);
+            VideoProj videoProj = new VideoProj(Collections.singletonList(part), new Rational(5, 1), this);
             utils.LogD(String.valueOf(videoProj.getLength()));
             videoProj.preRender();
             new Handler().postDelayed(new Runnable() {
