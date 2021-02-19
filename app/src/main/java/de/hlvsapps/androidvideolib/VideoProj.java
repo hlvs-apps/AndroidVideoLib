@@ -40,6 +40,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jcodec.common.model.Picture;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 public class VideoProj {
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
@@ -150,9 +151,8 @@ public class VideoProj {
      * Extracts all Videos into Images in external files dir, to provide a better Rendering
      * Please Call this before you Render!
      *
-     * @return A Listenable Future for the Operation.
      */
-    public ListenableFuture<Operation.State.SUCCESS> preRender(){
+    public void preRender(Runnable onFinish){
         askForBackgroundPermissions();
         Intent intent = new Intent(context, context.getClass());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -174,6 +174,7 @@ public class VideoProj {
     // Do the job here that tracks the progress.
 
         PreRenderer.proj=this;
+        PreRenderer.whatDoAfter=onFinish;
         Constraints constraints;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             constraints = new Constraints.Builder()
@@ -190,7 +191,7 @@ public class VideoProj {
         OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
                 .setConstraints(constraints)
                 .build();
-        return WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest).getResult();
+        WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
     }
 
     public RendererTimeLine getRendererTimeLine() {
