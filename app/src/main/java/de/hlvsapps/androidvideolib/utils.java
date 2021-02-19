@@ -47,6 +47,7 @@ public class utils {
     //CONSTANTS
     public static String VIDEO_FOLDER_NAME="AndroidVideoLib-Video";
 
+    public static final boolean BUILDCONFIGDEBUG=true;//BuildConfig.DEBUG;
 
     public static void saveToInternalStorage(Bitmap bitmapImage,Context c,String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
@@ -169,7 +170,7 @@ public class utils {
         if (msg==null){
             msg="null";
         }
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
 
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
@@ -187,7 +188,7 @@ public class utils {
         if (msg==null){
             msg="null";
         }
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
 
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
@@ -207,7 +208,7 @@ public class utils {
         if (msg==null){
             msg="null";
         }
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
 
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
@@ -223,7 +224,7 @@ public class utils {
         }
     }
     public static void LogE(final Throwable tr) {
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
 
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
@@ -242,7 +243,7 @@ public class utils {
         if (msg==null){
             msg="null";
         }
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
 
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
@@ -260,7 +261,7 @@ public class utils {
         if (msg==null){
             msg="null";
         }
-        if (BuildConfig.DEBUG) {
+        if (BUILDCONFIGDEBUG) {
             final StackTraceElement stackTrace = new Exception().getStackTrace()[1];
 
             String fileName = stackTrace.getFileName();
