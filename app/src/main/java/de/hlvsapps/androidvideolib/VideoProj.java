@@ -61,7 +61,7 @@ public class VideoProj {
     private int length;
     private double length_seconds;
 
-    private Rational fps;
+    private Rational fps=null;
 
     private boolean[] which_task_finished;
 
@@ -77,9 +77,28 @@ public class VideoProj {
         updateRenderTimeLine();
     }
 
+    public VideoProj(String outputname, List<VideoPart> input, AppCompatActivity context){
+        this.output=outputname;
+        this.input=input;
+        this.fps=null;
+        this.context=context;
+        this.rendererTimeLine=new RendererTimeLine();
+        this.rendererTimeLine.addAllParts(this.input);
+        updateRenderTimeLine();
+    }
+
     public VideoProj(List<VideoPart> input,Rational fps, AppCompatActivity context){
         this.input=input;
         this.fps=fps;
+        this.context=context;
+        this.rendererTimeLine=new RendererTimeLine();
+        this.rendererTimeLine.addAllParts(this.input);
+        updateRenderTimeLine();
+    }
+
+    public VideoProj(List<VideoPart> input, AppCompatActivity context){
+        this.input=input;
+        this.fps=null;
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
@@ -201,6 +220,9 @@ public class VideoProj {
     public void renderInTo(String output){
         this.output=output;
 
+        if(fps==null){
+            throw new IllegalStateException("FPS can not be null");
+        }
         askForBackgroundPermissions();
 
         Intent intent = new Intent(context, context.getClass());
