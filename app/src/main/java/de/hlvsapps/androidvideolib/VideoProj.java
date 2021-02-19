@@ -105,6 +105,10 @@ public class VideoProj {
         updateRenderTimeLine();
     }
 
+    public Rational getFpsOfFirstClip(){
+        return new Rational(rendererTimeLine.getUriIdentifierPairs().get(0).getLengthInFrames(), (int) rendererTimeLine.getUriIdentifierPairs().get(0).getLengthInSeconds());
+    }
+
     public void setFps(Rational fps) {
         this.fps = fps;
     }

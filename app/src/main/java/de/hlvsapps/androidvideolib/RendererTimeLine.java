@@ -83,7 +83,12 @@ public class RendererTimeLine {
         setUriIdentifierPairsLengthInSeconds(proj);
         videoLengthInSeconds=0;
         for(UriIdentifierPair p:uriIdentifierPairs){
-            double actual_length=p.getLengthInSeconds()+p.getFrameStartInProject();
+            double actual_length;
+            if(proj.getFps()!=null){
+                actual_length = p.getLengthInSeconds() + (p.getFrameStartInProject() * (proj.getFps().getNum()*1D / proj.getFps().getDen()));
+            }else {
+                actual_length = p.getLengthInSeconds() + p.getFrameStartInProject() * (p.getLengthInFrames() / p.getLengthInSeconds());
+            }
             if(actual_length>videoLengthInSeconds){
                 videoLengthInSeconds=actual_length;
             }
