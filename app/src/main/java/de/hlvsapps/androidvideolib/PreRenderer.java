@@ -18,6 +18,7 @@ package de.hlvsapps.androidvideolib;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
@@ -35,9 +36,11 @@ import org.jcodec.common.model.Picture;
 import org.jcodec.scale.Yuv420pToRgb;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.List;
 
 import static android.content.Context.POWER_SERVICE;
@@ -83,32 +86,39 @@ public class PreRenderer extends Worker {
             for (UriIdentifierPair i : workList) {
                 String name = i.getUriIdentifier().getIdentifier();
                 int video_length=i.getLengthInFrames();
-                try (FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(i.getUriIdentifier().getUri(), "r").getFileDescriptor())).getChannel())) {
-                    FrameGrab grab = FrameGrab.createFrameGrab(ch);
-                    int ii = 0;
-                    Picture picture;
-                    while (null != (picture = grab.getNativeFrame())) {
-                        if (picture.getColor() == ColorSpace.YUV420) {
-                            Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
-                            ytb.transform(picture, pic3);
-                            picture = pic3;
+                try(ParcelFileDescriptor pfd=resolver.openFileDescriptor(i.getUriIdentifier().getUri(), "r")) {
+                    try (FileInputStream t = new FileInputStream(pfd.getFileDescriptor())) {
+                        try (FileChannel c = t.getChannel()) {
+                            try (FileChannelWrapper ch = new FileChannelWrapper(c)) {
+                                FrameGrab grab = FrameGrab.createFrameGrab(ch);
+                                int ii = 0;
+                                Picture picture;
+                                while (null != (picture = grab.getNativeFrame())) {
+                                    if (picture.getColor() == ColorSpace.YUV420) {
+                                        Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
+                                        ytb.transform(picture, pic3);
+                                        picture = pic3;
+                                    }
+                                    if (ii == 0 && proj.pic0 == null) {
+                                        proj.pic0 = picture;
+                                    }
+                                    utils.LogI("Save Image");
+                                    Bitmap bitmap = AndroidUtil.toBitmap(picture);
+                                    utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
+                                    utils.LogD(name + ii);
+                                    final int value = j * 100 + (ii / video_length) * 100;
+                                    proj.setNotificationProgress(length * 100 + 1, value, false);
+                                    setProgressAsync(new Data.Builder()
+                                            .putInt("progress", value)
+                                            .putInt("max", length * 100 + 1)
+                                            .build());
+                                    ii++;
+                                }
+                            } catch (IOException | JCodecException e) {
+                                utils.LogE(e);
+                            }
                         }
-                        if(ii==0 && proj.pic0==null){
-                            proj.pic0=picture;
-                        }
-                        utils.LogI("Save Image");
-                        Bitmap bitmap = AndroidUtil.toBitmap(picture);
-                        utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
-                        final int value = j * 100 + (ii / video_length) * 100;
-                        proj.setNotificationProgress(length*100+1, value, false);
-                        setProgressAsync(new Data.Builder()
-                                .putInt("progress", value)
-                                .putInt("max", length*100+1)
-                                .build());
-                        ii++;
                     }
-                } catch (IOException | JCodecException e) {
-                    utils.LogE(e);
                 }
                 j++;
             }
@@ -116,7 +126,12 @@ public class PreRenderer extends Worker {
             proj.getWakeLock().release();
             proj.setNotificationProgress(1, 1, true);
             setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-            throw e;
+            try {
+                throw e;
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+                return ListenableWorker.Result.failure();
+            }
         }
         proj.setNotificationProgress(1, 1, true);
         setProgressAsync(new Data.Builder().putInt("progress", -1).build());

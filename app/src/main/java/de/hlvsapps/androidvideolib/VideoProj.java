@@ -32,7 +32,10 @@ import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.Operation;
 import androidx.work.WorkManager;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jcodec.common.model.Picture;
 
@@ -56,6 +59,7 @@ public class VideoProj {
     private final AppCompatActivity context;
     private PowerManager.WakeLock wakeLock;
     private int length;
+    private double length_seconds;
 
     private Rational fps;
 
@@ -116,13 +120,16 @@ public class VideoProj {
 
     private void updateRenderTimeLine(){
         length=rendererTimeLine.getVideoLengthInFrames(this);
+        length_seconds=rendererTimeLine.getVideoLengthInSeconds(this);
     }
 
     /**
      * Extracts all Videos into Images in external files dir, to provide a better Rendering
      * Please Call this before you Render!
+     *
+     * @return A Listenable Future for the Operation.
      */
-    public void preRender(){
+    public ListenableFuture<Operation.State.SUCCESS> preRender(){
         askForBackgroundPermissions();
         Intent intent = new Intent(context, context.getClass());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -160,7 +167,7 @@ public class VideoProj {
         OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
                 .setConstraints(constraints)
                 .build();
-        WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
+        return WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest).getResult();
     }
 
     public RendererTimeLine getRendererTimeLine() {
@@ -275,6 +282,10 @@ public class VideoProj {
 
     public int getLength() {
         return length;
+    }
+
+    public double getLength_seconds() {
+        return length_seconds;
     }
 
     void setNotificationProgress(int max, int progress, boolean finsih){

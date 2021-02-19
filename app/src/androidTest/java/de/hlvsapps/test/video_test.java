@@ -33,6 +33,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import de.hlvsapps.androidvideolib.R;
 import de.hlvsapps.androidvideolib.Rational;
@@ -145,13 +146,16 @@ public class video_test extends AppCompatActivity {
             );
             VideoProj videoProj = new VideoProj(Collections.singletonList(part), new Rational(5, 1), this);
             utils.LogD(String.valueOf(videoProj.getLength()));
-            videoProj.preRender();
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    videoProj.render();
-                }
-            }, 1000 * 10 * 2);
+            try {
+                videoProj.preRender().get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+                return;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
+            videoProj.render();
         }
     }
 }

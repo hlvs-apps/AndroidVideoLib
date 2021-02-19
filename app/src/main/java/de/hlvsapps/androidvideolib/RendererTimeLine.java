@@ -26,6 +26,7 @@ public class RendererTimeLine {
     private final List<UriIdentifierPair> uriIdentifierPairs;
     private final List<RenderTaskWrapper> renderTaskWrappers;
     private int videoLengthInFrames;
+    private double videoLengthInSeconds;
 
     public RendererTimeLine(){
         uriIdentifierPairs=new ArrayList<>();
@@ -61,6 +62,33 @@ public class RendererTimeLine {
             }
             i++;
         }
+    }
+
+    public void setUriIdentifierPairsLengthInSeconds(VideoProj proj){
+        int i=0;
+        while(i<uriIdentifierPairs.size()){
+            try {
+                uriIdentifierPairs.set(i,
+                        uriIdentifierPairs.get(i).setLengthInSeconds(
+                                utils.getMP4LengthInSeconds(proj,
+                                        uriIdentifierPairs.get(i).getUriIdentifier().getUri())));
+            } catch (Exception e) {
+                utils.LogE(e);
+            }
+            i++;
+        }
+    }
+
+    public double getVideoLengthInSeconds(VideoProj proj){
+        setUriIdentifierPairsLengthInSeconds(proj);
+        videoLengthInSeconds=0;
+        for(UriIdentifierPair p:uriIdentifierPairs){
+            double actual_length=p.getLengthInSeconds()+p.getFrameStartInProject();
+            if(actual_length>videoLengthInSeconds){
+                videoLengthInSeconds=actual_length;
+            }
+        }
+        return videoLengthInFrames;
     }
 
     public int getVideoLengthInFrames(VideoProj proj){
