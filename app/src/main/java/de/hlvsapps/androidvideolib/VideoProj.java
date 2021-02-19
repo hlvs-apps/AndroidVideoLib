@@ -40,7 +40,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jcodec.common.model.Picture;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class VideoProj {
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
@@ -153,7 +152,7 @@ public class VideoProj {
      *
      * @return A Listenable Future for the Operation.
      */
-    public ListenableFuture<Operation.State.SUCCESS> preRender(boolean wait_for_result_return_null){
+    public ListenableFuture<Operation.State.SUCCESS> preRender(){
         askForBackgroundPermissions();
         Intent intent = new Intent(context, context.getClass());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -191,19 +190,8 @@ public class VideoProj {
         OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
                 .setConstraints(constraints)
                 .build();
-        if(wait_for_result_return_null){
-            try {
-                WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest).getResult().get();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
         return WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest).getResult();
     }
-
 
     public RendererTimeLine getRendererTimeLine() {
         return rendererTimeLine;
