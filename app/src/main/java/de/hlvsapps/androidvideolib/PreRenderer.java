@@ -48,6 +48,7 @@ import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
 
 public class PreRenderer extends Worker {
     static VideoProj proj;
+    static Runnable whatDoAfter=null;
 
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -119,6 +120,10 @@ public class PreRenderer extends Worker {
                             }
                         }
                     }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
                 j++;
             }
@@ -126,16 +131,15 @@ public class PreRenderer extends Worker {
             proj.getWakeLock().release();
             proj.setNotificationProgress(1, 1, true);
             setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-            try {
-                throw e;
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-                return ListenableWorker.Result.failure();
-            }
+            e.printStackTrace();
+            throw e;
         }
         proj.setNotificationProgress(1, 1, true);
         setProgressAsync(new Data.Builder().putInt("progress", -1).build());
         proj.getWakeLock().release();
+        if(whatDoAfter!=null)whatDoAfter.run();
+        proj=null;
+        whatDoAfter=null;
         return ListenableWorker.Result.success();
     }
 
