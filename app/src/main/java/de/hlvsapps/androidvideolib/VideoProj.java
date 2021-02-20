@@ -525,6 +525,22 @@ public class VideoProj {
     }
 
     /**
+     * Rendering with showing Progress in {@link ProgressActivity}
+     * @param output The output forwarded to {@link VideoProj#renderInTo(String)}
+     */
+    public void startRenderActivityAndRenderInTo(String output){
+        context.startActivity(new Intent(context,ProgressActivity.class));
+        renderInTo(output,new SendProgressAsBroadcast(context));
+    }
+
+    /**
+     * Rendering with showing Progress in {@link ProgressActivity}
+     */
+    public void startRenderActivityAndRenderInTo(){
+        render(new SendProgressAsBroadcast(context));
+    }
+
+    /**
      * Renders the VideoProj.
      * Calls {@link VideoProj#renderInTo(String)} with output Name, or when null or "" with your AppsName and the actual date.
      */
