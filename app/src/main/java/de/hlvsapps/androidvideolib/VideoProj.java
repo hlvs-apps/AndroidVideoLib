@@ -39,14 +39,27 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jcodec.common.model.Picture;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executor;
 
+/**
+ * The Main Class of AndroidVideoLib.
+ * A VideoProj contains all Data required to Render a Video, and is used to start Rendering a Video.
+ * A Input is Defined as VideoPart, a VideoProj can contain multiple VideoParts
+ *
+ * Before Rendering, you have to call {@link VideoProj#preRender(Runnable)} to save the Images of all Videos in your Apps Storage.
+ * To Render call {@link VideoProj#renderInTo(String)} or {@link VideoProj#render()} to Render your Video to a specified Output.
+ *
+ * @author hlvs-apps
+ */
 public class VideoProj {
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
     public static final String DATA_ID_RENDERER="DATA_ID_RENDERER";
-    //TODO CHANGE
-    public static final String WAKE_LOCK_ID = "AndroidVideoLib::RenderLock";
+    public static final String END_OF_WAKE_LOCK_ID="::RenderLock";
+    public static String WAKE_LOCK_ID ;
 
     public static final int NOTIFICATION_ID =1034;
 
@@ -62,12 +75,22 @@ public class VideoProj {
     private int length;
     private double length_seconds;
 
+    private String videoFolderName;
+
     private Rational fps=null;
 
     private boolean[] which_task_finished;
 
     private RendererTimeLine rendererTimeLine;
 
+
+    /**
+     * Constructor of {@link VideoProj}.
+     * @param outputname The Name of the Output of the Video.
+     * @param input The VideoParts with the Videos
+     * @param fps Output FPS
+     * @param context Your Context
+     */
     public VideoProj(String outputname, List<VideoPart> input, Rational fps, AppCompatActivity context){
         this.output=outputname;
         this.input=input;
@@ -75,9 +98,18 @@ public class VideoProj {
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
+        this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
+        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
+    /**
+     * Constructor of {@link VideoProj}.
+     * @param outputname The Name of the Output of the Video.
+     * @param input The VideoParts with the Videos
+     * @param context Your Context
+     */
     public VideoProj(String outputname, List<VideoPart> input, AppCompatActivity context){
         this.output=outputname;
         this.input=input;
@@ -85,44 +117,104 @@ public class VideoProj {
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
+        this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
+        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
+    /**
+     * Constructor of {@link VideoProj}.
+     * @param input The VideoParts with the Videos
+     * @param fps Output FPS
+     * @param context Your Context
+     */
     public VideoProj(List<VideoPart> input,Rational fps, AppCompatActivity context){
         this.input=input;
         this.fps=fps;
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
+        this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
+        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
+    /**
+     * Constructor of {@link VideoProj}.
+     * @param input The VideoParts with the Videos
+     * @param context Your Context
+     */
     public VideoProj(List<VideoPart> input, AppCompatActivity context){
         this.input=input;
         this.fps=null;
         this.context=context;
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
+        this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
+        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
+    /**
+     * Sets the output folder for your rendered video in gallery
+     * @param name The name of the folder
+     */
+    public void setVideoFolderName(String name){
+        videoFolderName=name;
+        utils.setVideoFolderName(videoFolderName);
+    }
+
+    /**
+     * Get the output folder for your rendered video in gallery
+     * @return output folder for your rendered video in gallery
+     */
+    public String getVideoFolderName() {
+        return videoFolderName;
+    }
+
+    /**
+     * Get FPS of first clip
+     * @return tge fps of the first clip as {@link Rational}.
+     */
     public Rational getFpsOfFirstClip(){
         return new Rational(rendererTimeLine.getUriIdentifierPairs().get(0).getLengthInFrames(), (int) rendererTimeLine.getUriIdentifierPairs().get(0).getLengthInSeconds());
     }
 
+    /**
+     * Sets FPS of whole Project
+     * @param fps FPS as {@link Rational}
+     */
     public void setFps(Rational fps) {
         this.fps = fps;
     }
 
+    /**
+     * Gets FPS of whole Project
+     * @return FPS of whole Project as {@link Rational}
+     */
     public Rational getFps() {
         return fps;
     }
 
+    /**
+     * Adds a VideoPart to the Project
+     * Don't forget to call {@link VideoProj#preRender(Runnable)} before Rendering
+     * @param input The Video Part you want to add
+     */
     public void addInput(VideoPart input){
         this.input.add(input);
         this.rendererTimeLine.addAllFromVideoPart(input);
         updateRenderTimeLine();
     }
+
+    /**
+     * Adds  VideoParts to the Project
+     * Don't forget to call {@link VideoProj#preRender(Runnable)} before Rendering
+     * @param inputs The Video Parts you want to add
+     */
     public void addAllInput(List<VideoPart> inputs){
         this.input.addAll(inputs);
         this.rendererTimeLine.addAllParts(inputs);
@@ -137,6 +229,10 @@ public class VideoProj {
         this.wakeLock = wakeLock;
     }
 
+    /**
+     * Get your Context
+     * @return your Context
+     */
     public AppCompatActivity getContext() {
         return context;
     }
@@ -150,7 +246,16 @@ public class VideoProj {
     /**
      * Extracts all Videos into Images in external files dir, to provide a better Rendering
      * Please Call this before you Render!
+     */
+    public void preRender(){
+        preRender(() -> utils.LogI("Rendering finished"));
+    }
+
+    /**
+     * Extracts all Videos into Images in external files dir, to provide a better Rendering
+     * Please Call this before you Render!
      *
+     * @param onFinish Runnable to Execute when preRendering finished
      */
     public void preRender(Runnable onFinish){
         askForBackgroundPermissions();
@@ -194,10 +299,19 @@ public class VideoProj {
         WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
     }
 
+    /**
+     * Gets the {@link RendererTimeLine} Line for all {@link VideoProj}s
+     * You usually don't have to use this
+     * @return The Rendered Time Line
+     */
     public RendererTimeLine getRendererTimeLine() {
         return rendererTimeLine;
     }
 
+
+    /**
+     * Ask for Background Execution Permissions.
+     */
     public void askForBackgroundPermissions(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String packageName = context.getPackageName();
@@ -217,9 +331,9 @@ public class VideoProj {
 
     /**
      * Render this Project to a Output String
-     * Please use <pre>{@code setNotificationProgress(max, progress1, progress1 ==-1);}</pre> to update Status progress.
+     * Please don't forget to set the FPS with {@link VideoProj#setFps(Rational)}, otherwise we cant Render the Project.
      *
-     * @param output The Output File Name as String. New Output of this Proj will become that.
+     * @param output The Output File Name as String. New Output of this VideoProj will become that.
      *
      */
     public void renderInTo(String output){
@@ -307,10 +421,16 @@ public class VideoProj {
         }
     }
 
+    /**
+     * @return Length In Frames
+     */
     public int getLength() {
         return length;
     }
 
+    /**
+     * @return Length in Seconds
+     */
     public double getLength_seconds() {
         return length_seconds;
     }
@@ -348,15 +468,32 @@ public class VideoProj {
     }
 
 
+    /**
+     * Gets the Output File Name
+     * @return Output File Name
+     */
     public String getOutputString(){
         return this.output;
     }
 
+    /**
+     * Set a new Output File Name
+     * @param output the Output File Name
+     */
     public void setOutput(String output){
         this.output=output;
     }
 
+    /**
+     * Renders the VideoProj.
+     * Calls {@link VideoProj#renderInTo(String)} with output Name, or when null or "" with your AppsName and the actual date.
+     */
     public void render(){
+        if(output==null || output.equals("")){
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
+            Date now = new Date();
+            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
+        }
         renderInTo(output);
     }
 }

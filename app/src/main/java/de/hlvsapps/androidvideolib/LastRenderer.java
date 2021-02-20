@@ -28,19 +28,13 @@ import androidx.work.WorkerParameters;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
-import org.jcodec.common.model.ColorSpace;
-import org.jcodec.common.model.Picture;
-import org.jcodec.common.model.Rational;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class LastRenderer extends Worker {
     static VideoProj proj;
@@ -76,9 +70,7 @@ public class LastRenderer extends Worker {
         FileOutputStream stream1=null;
         ParcelFileDescriptor d=null;
         try {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
-            Date now = new Date();
-            String fileName = "AndroidVideoLib_Export_" + formatter.format(now);
+            String fileName=proj.getOutputString();
             List<Object> re = utils.fileOutputStreamFromName(proj.getContext(), fileName);
             stream1 = (FileOutputStream) re.get(0);
             d= (ParcelFileDescriptor) re.get(1);
@@ -90,18 +82,23 @@ public class LastRenderer extends Worker {
             for (String name : reallist) {
                 //Amend
                 utils.LogD(String.valueOf(i));
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromInternalExportStorageAndDelete(proj.getContext(), name), proj.pic0.getColor()));
+                utils.LogD(name);
+                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), proj.pic0.getColor()));
                 proj.setNotificationProgress(length, i, false);
                 setProgressAsync(new Data.Builder()
                         .putInt("progress",i)
                         .putInt("max", length)
                         .build());
                 i++;
+                utils.LogD("Finished");
             }
+            proj.setNotificationProgress(1, 1, true);
             enc.finish();
             ch.close();
             stream1.close();
             if(d!=null)d.close();
+            utils.LogD("Complete Finished");
+            return Result.success();
         } catch (FileNotFoundException e) {
             utils.LogE(e);
             return Result.failure();
@@ -111,8 +108,7 @@ public class LastRenderer extends Worker {
         }finally {
             try {
                 if(enc!=null)enc.finish();
-            } catch (Exception e) {
-                utils.LogE(e);
+            } catch (Exception ignored) {
             }
             try {
                 if(ch!=null)ch.close();
@@ -129,7 +125,11 @@ public class LastRenderer extends Worker {
             }catch (Exception e){
                 utils.LogE(e);
             }
+            proj.setNotificationProgress(1, 1, true);
+            setProgressAsync(new Data.Builder()
+                    .putInt("progress",1)
+                    .putInt("max", 1)
+                    .build());
         }
-        return Result.success();
     }
 }
