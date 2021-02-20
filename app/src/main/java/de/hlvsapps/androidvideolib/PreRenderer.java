@@ -49,6 +49,8 @@ public class PreRenderer extends Worker {
     static VideoProj proj;
     static Runnable whatDoAfter=null;
 
+    static ProgressPreRender progressPreRender=null;
+
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
         //this.proj=proj;
@@ -106,12 +108,14 @@ public class PreRenderer extends Worker {
                                     Bitmap bitmap = AndroidUtil.toBitmap(picture);
                                     utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
                                     utils.LogD(name + ii);
-                                    final int value = j * 100 + (ii / video_length) * 100;
-                                    proj.setNotificationProgress(length * 100 + 1, value, false);
-                                    setProgressAsync(new Data.Builder()
-                                            .putInt("progress", value)
-                                            .putInt("max", length * 100 + 1)
-                                            .build());
+                                    final int value = j * 100 + (ii / video_length) * 10000;
+                                    proj.setNotificationProgress(length * 100, value, false);
+                                    if(progressPreRender!=null)progressPreRender.updateProgress(value,length*100,false);
+//                                    setProgressAsync(new Data.Builder()
+//                                            .putInt("progress", value)
+//                                            .putInt("max", length * 100)
+//                                            .build());
+
                                     ii++;
                                 }
                             } catch (IOException | JCodecException e) {
@@ -129,16 +133,19 @@ public class PreRenderer extends Worker {
         }catch (Exception e){
             proj.getWakeLock().release();
             proj.setNotificationProgress(1, 1, true);
-            setProgressAsync(new Data.Builder().putInt("progress", -1).build());
+            //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
+            if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
             e.printStackTrace();
             throw e;
         }
         proj.setNotificationProgress(1, 1, true);
-        setProgressAsync(new Data.Builder().putInt("progress", -1).build());
+        if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
+        //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
         proj.getWakeLock().release();
         if(whatDoAfter!=null)whatDoAfter.run();
         proj=null;
         whatDoAfter=null;
+        progressPreRender=null;
         return ListenableWorker.Result.success();
     }
 

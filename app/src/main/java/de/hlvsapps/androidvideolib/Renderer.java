@@ -37,6 +37,8 @@ public class Renderer extends Worker {
 
     static VideoProj proj;
 
+    static ProgressRender progressRender=null;
+
     public Renderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
         //this.proj=proj;
@@ -76,7 +78,10 @@ public class Renderer extends Worker {
         utils.LogD("To2: "+ to);
         proj.inputs_from_last_render[which_renderer]=new ArrayList<>();
         int actual_num_of_saved_image=0;
+        int max=to-from;
         for(int i=from;i<to;i++){
+            int actual_state=i-from;
+            if(progressRender!=null)progressRender.updateProgressOfX(which_renderer, (int) (100 * (actual_state*1D)/max),max*100,false);
             List<VideoBitmap> bitmap0=new ArrayList<>();
             List<VideoBitmap> bitmap1=new ArrayList<>();
             for(UriIdentifierPair p:wrapper.getMatchingUriIdentifierPairs()){
@@ -104,6 +109,7 @@ public class Renderer extends Worker {
             }
         }
 
+        if(progressRender!=null)progressRender.updateProgressOfX(which_renderer,1,1,true);
         proj.getWakeLock().release();
         proj.startLastRender(which_renderer);
         return Result.success();

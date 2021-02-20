@@ -38,6 +38,8 @@ import java.util.List;
 
 public class LastRenderer extends Worker {
     static VideoProj proj;
+
+    static ProgressRender progressRender=null;
     public LastRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
@@ -85,19 +87,24 @@ public class LastRenderer extends Worker {
                 utils.LogD(name);
                 enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), proj.pic0.getColor()));
                 proj.setNotificationProgress(length, i, false);
-                setProgressAsync(new Data.Builder()
+                /*setProgressAsync(new Data.Builder()
                         .putInt("progress",i)
                         .putInt("max", length)
                         .build());
+                 */
+                if(progressRender!=null)progressRender.updateProgressOfSavingVideo(length,i,false);
                 i++;
                 utils.LogD("Finished");
             }
             proj.setNotificationProgress(1, 1, true);
+            if(progressRender!=null)progressRender.updateProgressOfSavingVideo(1,1,true);
             enc.finish();
             ch.close();
             stream1.close();
             if(d!=null)d.close();
             utils.LogD("Complete Finished");
+            progressRender=null;
+            proj=null;
             return Result.success();
         } catch (FileNotFoundException e) {
             utils.LogE(e);
@@ -106,6 +113,10 @@ public class LastRenderer extends Worker {
             utils.LogE(e);
             return Result.failure();
         }finally {
+            if(progressRender!=null)progressRender.updateProgressOfSavingVideo(1,1,true);
+            if(proj!=null)proj.setNotificationProgress(1, 1, true);
+            progressRender=null;
+            proj=null;
             try {
                 if(enc!=null)enc.finish();
             } catch (Exception ignored) {
@@ -125,11 +136,6 @@ public class LastRenderer extends Worker {
             }catch (Exception e){
                 utils.LogE(e);
             }
-            proj.setNotificationProgress(1, 1, true);
-            setProgressAsync(new Data.Builder()
-                    .putInt("progress",1)
-                    .putInt("max", 1)
-                    .build());
         }
     }
 }
