@@ -536,4 +536,18 @@ public class VideoProj {
         }
         renderInTo(output);
     }
+
+    /**
+     * Renders the VideoProj.
+     * Calls {@link VideoProj#renderInTo(String,ProgressRender)} with output Name, or when null or "" with your AppsName and the actual date.
+     * @param progressRender The {@link ProgressRender} to call {@link VideoProj#renderInTo(String, ProgressRender)}
+     */
+    public void render(ProgressRender progressRender){
+        if(output==null || output.equals("")){
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
+            Date now = new Date();
+            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
+        }
+        renderInTo(output,progressRender);
+    }
 }
