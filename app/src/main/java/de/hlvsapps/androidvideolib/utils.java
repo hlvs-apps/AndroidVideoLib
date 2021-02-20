@@ -211,7 +211,7 @@ public class utils {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;
         String name= stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
-        return name.replaceAll(" ", "_");
+        return name.replaceAll(" ", "");
     }
 
 
