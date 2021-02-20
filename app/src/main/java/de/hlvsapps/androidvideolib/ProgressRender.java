@@ -1,6 +1,7 @@
 /*-----------------------------------------------------------------------------
- - Copyright 2021 hlvs-apps                                                   -
  - This is a part of AndroidVideoLib.                                         -
+ - To see the Authors, look at Github for contributors of this file.          -
+ - Copyright 2021 The Authors of AndroidVideoLib                              -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -16,15 +17,34 @@
 
 package de.hlvsapps.androidvideolib;
 
-import android.graphics.Bitmap;
-
-import java.util.List;
-
 /**
- * Interface for Rendering
+ * Interface for Updating progress while Rendering.
+ * While Rendering, you need x+1 views, x for the Tasks while Rendering, 1 for the Last Task, Saving the Video
  *
  * @author hlvs-apps
  */
-public interface RenderTask {
-    List<Bitmap> render(List<VideoBitmap> bitmaps0, List<VideoBitmap> bitmaps1, int frameInProject);
+public interface ProgressRender {
+    /**
+     * Instantiate x views
+     * @param num x views
+     */
+    void instantiateProgressesForRendering(int num);
+
+    /**
+     * Update Progress of render Task num ...
+     * @param num The num of the Renderer to be updated
+     * @param progress the progress
+     * @param max the max progress
+     * @param finished finished?true:false
+     */
+    void updateProgressOfX(int num,int progress,int max,boolean finished);
+
+    /**
+     * Update the Progress of Video Saving
+     *
+     * @param progress the progress
+     * @param max the max progress
+     * @param finished finished?true:false
+     */
+    void updateProgressOfSavingVideo(int progress, int max, boolean finished);
 }

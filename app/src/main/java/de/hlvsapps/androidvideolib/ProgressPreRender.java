@@ -1,6 +1,7 @@
 /*-----------------------------------------------------------------------------
- - Copyright 2021 hlvs-apps                                                   -
  - This is a part of AndroidVideoLib.                                         -
+ - To see the Authors, look at Github for contributors of this file.          -
+ - Copyright 2021 The Authors of AndroidVideoLib                              -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -16,15 +17,11 @@
 
 package de.hlvsapps.androidvideolib;
 
-import android.graphics.Bitmap;
-
-import java.util.List;
-
 /**
- * Interface for Rendering
+ * Interface for Updating Progress while Pre Rendering
  *
  * @author hlvs-apps
  */
-public interface RenderTask {
-    List<Bitmap> render(List<VideoBitmap> bitmaps0, List<VideoBitmap> bitmaps1, int frameInProject);
+public interface ProgressPreRender {
+    void updateProgress(int state,int max,boolean finished);
 }

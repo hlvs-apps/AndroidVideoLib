@@ -258,6 +258,28 @@ public class VideoProj {
      * @param onFinish Runnable to Execute when preRendering finished
      */
     public void preRender(Runnable onFinish){
+        preRender(onFinish,null);
+    }
+
+    /**
+     * Extracts all Videos into Images in external files dir, to provide a better Rendering
+     * Please Call this before you Render!
+     *
+     * @param onProgress On Do Progress
+     */
+    public void preRender(ProgressPreRender onProgress){
+        preRender(() -> utils.LogI("Rendering finished"),onProgress);
+    }
+
+    /**
+     * Extracts all Videos into Images in external files dir, to provide a better Rendering
+     * Please Call this before you Render!
+     *
+     * @param onFinish Runnable to Execute when preRendering finished
+     * @param onProgress On Do Progress
+     */
+    public void preRender(Runnable onFinish, ProgressPreRender onProgress){
+        PreRenderer.progressPreRender=onProgress;
         askForBackgroundPermissions();
         Intent intent = new Intent(context, context.getClass());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -330,19 +352,37 @@ public class VideoProj {
 
 
     /**
+     * Render this Project to a Output String.
+     * Uses {@link VideoProj#renderInTo(String, ProgressRender)} with null for progressRender.
+     * Please don't forget to set the FPS with {@link VideoProj#setFps(Rational)}, otherwise we cant Render the Project.
+     *
+     * @param output The Output File Name as String. New Output of this VideoProj will become that.
+     * @throws IllegalStateException When FPS is null
+     */
+    public void renderInTo(String output){
+        renderInTo(output,null);
+    }
+
+    /**
      * Render this Project to a Output String
      * Please don't forget to set the FPS with {@link VideoProj#setFps(Rational)}, otherwise we cant Render the Project.
      *
      * @param output The Output File Name as String. New Output of this VideoProj will become that.
-     *
+     * @param progressRender Progress of Rendering
+     * @throws IllegalStateException When FPS is null
      */
-    public void renderInTo(String output){
+    public void renderInTo(String output,ProgressRender progressRender) throws IllegalStateException{
         this.output=output;
+
+        Renderer.progressRender=progressRender;
+        LastRenderer.progressRender=progressRender;
 
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");
         }
-        askForBackgroundPermissions();
+
+
+        //askForBackgroundPermissions();
 
         Intent intent = new Intent(context, context.getClass());
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
