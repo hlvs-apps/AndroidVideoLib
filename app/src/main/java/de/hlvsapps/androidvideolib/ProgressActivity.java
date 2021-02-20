@@ -64,6 +64,12 @@ public class ProgressActivity extends AppCompatActivity {
                     int num = intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE, -1);
                     if (num != -1) {
                         ProgressBar b = (ProgressBar) tab.getChildAt(num);
+                        while(b==null) {
+                            ProgressBar n = new ProgressBar(ProgressActivity.this, null, android.R.attr.progressBarStyleHorizontal);
+                            n.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                            tab.addView(n, num);
+                            b = (ProgressBar) tab.getChildAt(num);
+                        }
                         b.setMax(intent.getIntExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS, 1));
                         b.setProgress(intent.getIntExtra(INTENT_EXTRA_DATA_NAME_PROGRESS, 0));
                     }
