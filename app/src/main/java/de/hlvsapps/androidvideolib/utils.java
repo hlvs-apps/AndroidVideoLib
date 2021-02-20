@@ -206,11 +206,12 @@ public class utils {
         }
     }
 
-    //From https://stackoverflow.com/questions/11229219/android-how-to-get-application-name-not-package-name
+    //Parts From https://stackoverflow.com/questions/11229219/android-how-to-get-application-name-not-package-name
     public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;
-        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        String name= stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        return name.replaceAll(" ", "_");
     }
 
 
