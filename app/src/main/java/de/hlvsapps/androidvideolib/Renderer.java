@@ -81,7 +81,7 @@ public class Renderer extends Worker {
         int max=to-from;
         for(int i=from;i<to;i++){
             int actual_state=i-from;
-            if(progressRender!=null)progressRender.updateProgressOfX(which_renderer, (int) (100 * (actual_state*1D)/max),max*100,false);
+            if(progressRender!=null)progressRender.updateProgressOfX(which_renderer, (int) (100 * (actual_state*1D)/max),max,false);
             List<VideoBitmap> bitmap0=new ArrayList<>();
             List<VideoBitmap> bitmap1=new ArrayList<>();
             for(UriIdentifierPair p:wrapper.getMatchingUriIdentifierPairs()){
