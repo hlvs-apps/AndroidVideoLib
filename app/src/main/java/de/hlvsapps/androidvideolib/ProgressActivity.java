@@ -57,14 +57,13 @@ public class ProgressActivity extends AppCompatActivity {
                     for (int i = 0; i < intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE, -1); i++) {
                         ProgressBar n = new ProgressBar(ProgressActivity.this);
                         n.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                        n.setId(12345 + i);
-                        tab.addView(n);
+                        tab.addView(n,i);
                     }
                     break;
                 case renderUpdateProgressOfX:
-                    int num = 12345 + intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE, -12345);
-                    if (num != 0) {
-                        ProgressBar b = (ProgressBar) findViewById(num);
+                    int num = intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE, -1);
+                    if (num != -1) {
+                        ProgressBar b = (ProgressBar) tab.getChildAt(num);
                         b.setMax(intent.getIntExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS, 1));
                         b.setProgress(intent.getIntExtra(INTENT_EXTRA_DATA_NAME_PROGRESS, 0));
                     }
