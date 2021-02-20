@@ -108,7 +108,7 @@ public class PreRenderer extends Worker {
                                     Bitmap bitmap = AndroidUtil.toBitmap(picture);
                                     utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
                                     utils.LogD(name + ii);
-                                    final int value = j * 100 + (ii / video_length) * 10000;
+                                    final int value = (int) (j * 100 + ((ii* 1D) / video_length) * 10000);
                                     proj.setNotificationProgress(length * 100, value, false);
                                     if(progressPreRender!=null)progressPreRender.updateProgress(value,length*100,false);
 //                                    setProgressAsync(new Data.Builder()
