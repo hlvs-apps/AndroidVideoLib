@@ -91,9 +91,16 @@ public class Renderer extends Worker {
                         utils.readFromExternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
                 utils.LogD(fileName+i_for_video);
                 i_for_video++;
-                bitmap1.add(new VideoBitmap(
-                        utils.readFromExternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
-                utils.LogD(fileName+i_for_video);
+                if((i+1)<to) {
+                    bitmap1.add(new VideoBitmap(
+                            utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier().getIdentifier()));
+                    utils.LogD(fileName + i_for_video);
+                }else{
+                    bitmap1.add(new VideoBitmap(
+                            null,p.getUriIdentifier().getIdentifier()
+                    ));
+                    utils.LogD(fileName + i_for_video+" not added because it should not exist");
+                }
                 try {
                     for (Bitmap bitmap : wrapper.getRenderTask().render(bitmap0, bitmap1, i)) {
                         if(bitmap!=null) {
