@@ -478,13 +478,11 @@ public class VideoProj {
     void setNotificationProgress(int max, int progress, boolean finsih){
         if(!finsih){
             builder.setProgress(max, progress, false);
-            notificationManager.notify(NOTIFICATION_ID, builder.build());
         }else{
             builder.setContentText("Rendering complete")
                     .setProgress(0,0,false);
-            notificationManager.notify(NOTIFICATION_ID, builder.build());
-
         }
+        notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
 
     PowerManager.WakeLock getWakeLock() {
@@ -537,6 +535,7 @@ public class VideoProj {
      * Rendering with showing Progress in {@link ProgressActivity}
      */
     public void startRenderActivityAndRenderInTo(){
+        context.startActivity(new Intent(context,ProgressActivity.class));
         render(new SendProgressAsBroadcast(context));
     }
 
