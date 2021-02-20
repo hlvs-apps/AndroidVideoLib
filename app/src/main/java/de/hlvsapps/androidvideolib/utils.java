@@ -61,7 +61,15 @@ public class utils {
      static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getExternalFilesDir("imageCacheDirVideoExport");
+        File directory;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
+            if(!directory.exists()){
+                directory.mkdirs();
+            }
+        }else{
+            directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
+        }
         // Create imageDir
         File mypath=new File(directory,name);
         try (FileOutputStream fos= new FileOutputStream(mypath)){
@@ -81,7 +89,15 @@ public class utils {
      static void saveToExternalExportStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getExternalFilesDir("imageCacheExportDirVideoExport");
+         File directory;
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+             directory=new File(cw.getNoBackupFilesDir(),"imageCacheExportDirVideoExport");
+             if(!directory.exists()){
+                 directory.mkdirs();
+             }
+         }else{
+             directory = cw.getDir("imageCacheExportDirVideoExport",Context.MODE_PRIVATE);
+         }
         // Create imageDir
         File mypath=new File(directory,name);
         try (FileOutputStream fos= new FileOutputStream(mypath)){
@@ -94,7 +110,15 @@ public class utils {
 
      static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-        File directory = cw.getExternalFilesDir("imageCacheExportDirVideoExport");
+         File directory;
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+             directory=new File(cw.getNoBackupFilesDir(),"imageCacheExportDirVideoExport");
+             if(!directory.exists()){
+                 directory.mkdirs();
+             }
+         }else{
+             directory = cw.getDir("imageCacheExportDirVideoExport",Context.MODE_PRIVATE);
+         }
         File f=new File(directory, name);
         if(f.exists()) {
             Bitmap d=BitmapFactory.decodeFile(f.getPath());
@@ -107,7 +131,15 @@ public class utils {
 
      static Bitmap readFromExternalStorage(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-        File directory = cw.getExternalFilesDir("imageCacheDirVideoExport");
+         File directory;
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+             directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
+             if(!directory.exists()){
+                 directory.mkdirs();
+             }
+         }else{
+             directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
+         }
         File f=new File(directory, name);
         if(f.exists()) {
             utils.LogD(name+" does exist");
