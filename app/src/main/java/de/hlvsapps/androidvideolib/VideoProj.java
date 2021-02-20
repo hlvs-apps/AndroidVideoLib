@@ -51,7 +51,7 @@ import java.util.concurrent.Executor;
  * A Input is Defined as VideoPart, a VideoProj can contain multiple VideoParts
  *
  * Before Rendering, you have to call {@link VideoProj#preRender(Runnable)} to save the Images of all Videos in your Apps Storage.
- * To Render call {@link VideoProj#renderInTo(String)} or {@link VideoProj#render()} to Render your Video to a specified Output.
+ * To Render call {@link VideoProj#renderInTo(String)}, {@link VideoProj#renderInTo(String, ProgressRender)}, {@link VideoProj#render(ProgressRender)} or {@link VideoProj#render()} to Render your Video to a specified Output.
  *
  * @author hlvs-apps
  */
