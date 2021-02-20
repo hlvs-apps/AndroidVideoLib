@@ -45,6 +45,8 @@ import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_D
  */
 public class ProgressActivity extends AppCompatActivity {
     private LocalBroadcastManager localBroadcastManager;
+
+    //TODO ADD LISTENER FOR EVENTS WHEN ACTIVITY IS NOT VISIBLE AND SAVE VALUES
     private final BroadcastReceiver br = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
