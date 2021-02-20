@@ -45,7 +45,7 @@ import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_D
  */
 public class ProgressActivity extends AppCompatActivity {
     private LocalBroadcastManager localBroadcastManager;
-    private BroadcastReceiver br = new BroadcastReceiver() {
+    private final BroadcastReceiver br = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED serializableExtra = (INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED) intent.getSerializableExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED);
@@ -55,7 +55,7 @@ public class ProgressActivity extends AppCompatActivity {
                     break;
                 case renderInstantiateProgressForRendering:
                     for (int i = 0; i < intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE, -1); i++) {
-                        ProgressBar n = new ProgressBar(ProgressActivity.this);
+                        ProgressBar n = new ProgressBar(ProgressActivity.this,null, android.R.attr.progressBarStyleHorizontal);
                         n.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                         tab.addView(n,i);
                     }
@@ -88,18 +88,13 @@ public class ProgressActivity extends AppCompatActivity {
         localBroadcastManager=LocalBroadcastManager.getInstance(this);
         tab=findViewById(R.id.tab);
         progressBar=findViewById(R.id.progressBar2);
-    }
-
-    @Override
-    protected void onResume() {
         IntentFilter filter=new IntentFilter(SendProgressAsBroadcast.intentFilterAction);
         localBroadcastManager.registerReceiver(br, filter);
-        super.onResume();
     }
 
     @Override
-    protected void onPause() {
+    protected void onDestroy() {
         localBroadcastManager.unregisterReceiver(br);
-        super.onPause();
+        super.onDestroy();
     }
 }
