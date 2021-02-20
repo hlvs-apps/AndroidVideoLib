@@ -92,7 +92,7 @@ public class LastRenderer extends Worker {
                         .putInt("max", length)
                         .build());
                  */
-                if(progressRender!=null)progressRender.updateProgressOfSavingVideo(length,i,false);
+                if(progressRender!=null)progressRender.updateProgressOfSavingVideo(i,length,false);
                 i++;
                 utils.LogD("Finished");
             }
