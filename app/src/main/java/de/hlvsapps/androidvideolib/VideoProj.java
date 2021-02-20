@@ -374,9 +374,6 @@ public class VideoProj {
     public void renderInTo(String output,ProgressRender progressRender) throws IllegalStateException{
         this.output=output;
 
-        Renderer.progressRender=progressRender;
-        LastRenderer.progressRender=progressRender;
-
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");
         }
@@ -423,6 +420,9 @@ public class VideoProj {
         List<RenderTaskWrapperWithUriIdentifierPairs> list=rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
         inputs_from_last_render = new List[list.size()];
         which_task_finished=new boolean[list.size()];
+        progressRender.instantiateProgressesForRendering(list.size());
+        Renderer.progressRender=progressRender;
+        LastRenderer.progressRender=progressRender;
         for(RenderTaskWrapperWithUriIdentifierPairs ignored:list) {
             Data.Builder b = new Data.Builder();
             b.putInt(DATA_ID_RENDERER, i);
