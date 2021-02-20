@@ -36,7 +36,6 @@ import org.jcodec.common.model.Picture;
 import org.jcodec.scale.Yuv420pToRgb;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -105,7 +104,7 @@ public class PreRenderer extends Worker {
                                     }
                                     utils.LogI("Save Image");
                                     Bitmap bitmap = AndroidUtil.toBitmap(picture);
-                                    utils.saveToInternalStorage(bitmap, proj.getContext(), name + ii);
+                                    utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
                                     utils.LogD(name + ii);
                                     final int value = j * 100 + (ii / video_length) * 100;
                                     proj.setNotificationProgress(length * 100 + 1, value, false);

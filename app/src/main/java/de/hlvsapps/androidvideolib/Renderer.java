@@ -18,7 +18,6 @@ package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Picture;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
@@ -71,28 +70,34 @@ public class Renderer extends Worker {
         RenderTaskWrapperWithUriIdentifierPairs wrapper=proj.getRendererTimeLine().getRenderTasksWithMatchingUriIdentifierPairs(proj).get(which_renderer);
         int from=wrapper.getFrameInProjectFrom();
         int to=wrapper.getFrameInProjectTo();
-        utils.LogD(String.valueOf(to));
+        utils.LogD("From: "+ from);
+        utils.LogD("To1: "+ to);
         if(to==-1)to=proj.getLength();
-        utils.LogD(String.valueOf(to));
+        utils.LogD("To2: "+ to);
         proj.inputs_from_last_render[which_renderer]=new ArrayList<>();
         int actual_num_of_saved_image=0;
-        for(int i=from;i<=to;i++){
+        for(int i=from;i<to;i++){
             List<VideoBitmap> bitmap0=new ArrayList<>();
             List<VideoBitmap> bitmap1=new ArrayList<>();
             for(UriIdentifierPair p:wrapper.getMatchingUriIdentifierPairs()){
                 String fileName=p.getUriIdentifier().getIdentifier();
                 int i_for_video=i-p.getFrameStartInProject();
                 bitmap0.add(new VideoBitmap(
-                        utils.readFromInternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                        utils.readFromExternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                utils.LogD(fileName+i_for_video);
                 i_for_video++;
                 bitmap1.add(new VideoBitmap(
-                        utils.readFromInternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                        utils.readFromExternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                utils.LogD(fileName+i_for_video);
                 try {
                     for (Bitmap bitmap : wrapper.getRenderTask().render(bitmap0, bitmap1, i)) {
-                        String fileOutName = which_renderer + "_" + actual_num_of_saved_image;
-                        utils.saveToInternalExportStorage(bitmap, proj.getContext(), fileOutName);
-                        proj.inputs_from_last_render[which_renderer].add(fileOutName);
-                        actual_num_of_saved_image++;
+                        if(bitmap!=null) {
+                            String fileOutName = which_renderer + "_" + actual_num_of_saved_image;
+                            utils.LogD(fileOutName);
+                            utils.saveToExternalExportStorage(bitmap, proj.getContext(), fileOutName);
+                            proj.inputs_from_last_render[which_renderer].add(fileOutName);
+                            actual_num_of_saved_image++;
+                        }
                     }
                 }catch (NullPointerException ignored){
                 }

@@ -20,6 +20,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -45,14 +46,22 @@ import java.util.List;
 public class utils {
 
     //CONSTANTS
-    public static String VIDEO_FOLDER_NAME="AndroidVideoLib-Video";
+    private static String VIDEO_FOLDER_NAME="AndroidVideoLib-Video";
 
-    public static final boolean BUILDCONFIGDEBUG=true;//BuildConfig.DEBUG;
+     static final boolean BUILDCONFIGDEBUG=BuildConfig.DEBUG;
 
-    public static void saveToInternalStorage(Bitmap bitmapImage,Context c,String name){
+     static void setVideoFolderName(String videoFolderName) {
+        VIDEO_FOLDER_NAME = videoFolderName;
+    }
+
+     static String getVideoFolderName() {
+        return VIDEO_FOLDER_NAME;
+    }
+
+     static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getDir("imageCacheDirVideoExport", Context.MODE_PRIVATE);
+        File directory = cw.getExternalFilesDir("imageCacheDirVideoExport");
         // Create imageDir
         File mypath=new File(directory,name);
         try (FileOutputStream fos= new FileOutputStream(mypath)){
@@ -63,16 +72,16 @@ public class utils {
         }
     }
 
-    public static boolean areAllTrue(boolean... array)
+     static boolean areAllTrue(boolean... array)
     {
         for(boolean b : array) if(!b) return false;
         return true;
     }
 
-    public static void saveToInternalExportStorage(Bitmap bitmapImage,Context c,String name){
+     static void saveToExternalExportStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
-        File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
+        File directory = cw.getExternalFilesDir("imageCacheExportDirVideoExport");
         // Create imageDir
         File mypath=new File(directory,name);
         try (FileOutputStream fos= new FileOutputStream(mypath)){
@@ -83,9 +92,9 @@ public class utils {
         }
     }
 
-    public static Bitmap readFromInternalExportStorageAndDelete(Context c, String name){
+     static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-        File directory = cw.getDir("imageCacheExportDirVideoExport", Context.MODE_PRIVATE);
+        File directory = cw.getExternalFilesDir("imageCacheExportDirVideoExport");
         File f=new File(directory, name);
         if(f.exists()) {
             Bitmap d=BitmapFactory.decodeFile(f.getPath());
@@ -96,18 +105,20 @@ public class utils {
         }
     }
 
-    public static Bitmap readFromInternalStorage(Context c, String name){
+     static Bitmap readFromExternalStorage(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-        File directory = cw.getDir("imageCacheDirVideoExport", Context.MODE_PRIVATE);
+        File directory = cw.getExternalFilesDir("imageCacheDirVideoExport");
         File f=new File(directory, name);
         if(f.exists()) {
+            utils.LogD(name+" does exist");
             return BitmapFactory.decodeFile(f.getPath());
         }else{
+            utils.LogD(name+" does not exist");
             return null;
         }
     }
 
-    public static int getMP4LengthInFrames(VideoProj proj,Uri src) throws IOException {
+     static int getMP4LengthInFrames(VideoProj proj,Uri src) throws IOException {
         ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
         FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(src, "r").getFileDescriptor())).getChannel());
         MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
@@ -117,7 +128,7 @@ public class utils {
         return length;
     }
 
-    public static double getMP4LengthInSeconds(VideoProj proj,Uri src) throws IOException {
+     public static double getMP4LengthInSeconds(VideoProj proj,Uri src) throws IOException {
         ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
         FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(src, "r").getFileDescriptor())).getChannel());
         MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
@@ -128,7 +139,7 @@ public class utils {
     }
 
 
-    public static List<Object> fileOutputStreamFromName(Context c, String name) throws FileNotFoundException {
+    static List<Object> fileOutputStreamFromName(Context c, String name) throws FileNotFoundException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContentResolver resolver = c.getContentResolver();
             ContentValues contentValues = new ContentValues();
@@ -161,6 +172,13 @@ public class utils {
             re.add(null);
             return re;
         }
+    }
+
+    //From https://stackoverflow.com/questions/11229219/android-how-to-get-application-name-not-package-name
+    public static String getApplicationName(Context context) {
+        ApplicationInfo applicationInfo = context.getApplicationInfo();
+        int stringId = applicationInfo.labelRes;
+        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
     }
 
 
