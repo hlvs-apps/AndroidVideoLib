@@ -92,7 +92,7 @@ public class Renderer extends Worker {
                         utils.readFromExternalStorage(proj.getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
                 utils.LogD(fileName+i_for_video);
                 i_for_video++;
-                if((i+1)<to) {
+                if((i+1)<=to) {
                     bitmap1.add(new VideoBitmap(
                             utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier().getIdentifier()));
                     utils.LogD(fileName + i_for_video);

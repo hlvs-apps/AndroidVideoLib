@@ -22,6 +22,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
@@ -41,6 +42,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jcodec.common.model.Picture;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -78,6 +80,8 @@ public class VideoProj {
     private double length_seconds;
 
     private String videoFolderName;
+
+    private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
 
     private Rational fps=null;
 
@@ -255,6 +259,7 @@ public class VideoProj {
     private void updateRenderTimeLine(){
         length=rendererTimeLine.getVideoLengthInFrames(this);
         length_seconds=rendererTimeLine.getVideoLengthInSeconds(this);
+        renderTasksWithMatchingUriIdentifierPairs = rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
     }
 
     /**
@@ -431,13 +436,13 @@ public class VideoProj {
         }
 
         int i=0;
-        List<RenderTaskWrapperWithUriIdentifierPairs> list=rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
-        inputs_from_last_render = new List[list.size()];
-        which_task_finished=new boolean[list.size()];
-        progressRender.instantiateProgressesForRendering(list.size());
+        renderTasksWithMatchingUriIdentifierPairs = rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
+        inputs_from_last_render = new List[renderTasksWithMatchingUriIdentifierPairs.size()];
+        which_task_finished=new boolean[renderTasksWithMatchingUriIdentifierPairs.size()];
+        progressRender.instantiateProgressesForRendering(renderTasksWithMatchingUriIdentifierPairs.size());
         Renderer.progressRender=progressRender;
         LastRenderer.progressRender=progressRender;
-        for(RenderTaskWrapperWithUriIdentifierPairs ignored:list) {
+        for(RenderTaskWrapperWithUriIdentifierPairs ignored:renderTasksWithMatchingUriIdentifierPairs) {
             Data.Builder b = new Data.Builder();
             b.putInt(DATA_ID_RENDERER, i);
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
@@ -517,6 +522,44 @@ public class VideoProj {
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+
+    /**
+     * render a Frame at a Given Position. Because you can return Multiple Bitmaps in a {@link RenderTask}, this returns a List.
+     * @param position The Position of the Frame you want to have
+     * @return Returns a List of Bitmaps, and if no Renderer was found for the Task, it returns null.
+     */
+    public List<Bitmap> getFrameAtPosition(int position){
+        for (RenderTaskWrapperWithUriIdentifierPairs wrapper: renderTasksWithMatchingUriIdentifierPairs){
+            int to=wrapper.getFrameInProjectTo();
+            if(to==-1)to=getLength();
+            if(position>=wrapper.getFrameInProjectFrom() && position<=to){
+                List<VideoBitmap> bitmap0=new ArrayList<>();
+                List<VideoBitmap> bitmap1=new ArrayList<>();
+                for(UriIdentifierPair p:wrapper.getMatchingUriIdentifierPairs()){
+                    String fileName=p.getUriIdentifier().getIdentifier();
+                    int i_for_video=position-p.getFrameStartInProject();
+                    bitmap0.add(new VideoBitmap(
+                            utils.readFromExternalStorage(getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                    utils.LogD(fileName+i_for_video);
+                    i_for_video++;
+                    if((position+1)<=to) {
+                        bitmap1.add(new VideoBitmap(
+                                utils.readFromExternalStorage(getContext(), fileName + i_for_video), p.getUriIdentifier().getIdentifier()));
+                        utils.LogD(fileName + i_for_video);
+                    }else{
+                        bitmap1.add(new VideoBitmap(
+                                null,p.getUriIdentifier().getIdentifier()
+                        ));
+                        utils.LogD(fileName + i_for_video+" not added because it should not exist");
+                    }
+                    return wrapper.getRenderTask().render(bitmap0, bitmap1, position);
+                }
+
+            }
+        }
+        return null;
     }
 
 
