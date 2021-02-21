@@ -19,8 +19,12 @@ package de.hlvsapps.androidvideolib;
 
 import android.net.Uri;
 
+import java.io.Serializable;
 
-public class UriIdentifier {
+
+public class UriIdentifier implements Serializable {
+    private static final long serialVersionUID = 49L;
+    public static final int START_IN_VIDEO_SEGMENT_NOT_SET=-12354;
     private String identifier;
     private Uri uri;
     private int startInVideoSegment;
@@ -28,6 +32,12 @@ public class UriIdentifier {
         this.identifier=identifier;
         this.uri=uri;
         this.startInVideoSegment=startInVideoSegment;
+    }
+
+    public UriIdentifier(Uri uri,String identifier){
+        this.identifier=identifier;
+        this.uri=uri;
+        this.startInVideoSegment=START_IN_VIDEO_SEGMENT_NOT_SET;
     }
 
     //Getter and Setter Methods
