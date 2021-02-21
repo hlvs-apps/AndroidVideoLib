@@ -71,6 +71,7 @@ public class VideoProj {
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
+    private Class renderActivity;
     private PowerManager.WakeLock wakeLock;
     private int length;
     private double length_seconds;
@@ -82,6 +83,14 @@ public class VideoProj {
     private boolean[] which_task_finished;
 
     private RendererTimeLine rendererTimeLine;
+
+    /**
+     * Sets the Activity class to show render Progress.
+     * @param a The Render Activity Class
+     */
+    public void setShowRenderProgressActivity(Class a){
+        renderActivity=a;
+    }
 
 
     /**
@@ -99,6 +108,7 @@ public class VideoProj {
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        renderActivity= context.getClass();
         WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
@@ -118,6 +128,7 @@ public class VideoProj {
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        renderActivity= context.getClass();
         WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
@@ -136,6 +147,7 @@ public class VideoProj {
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        renderActivity= context.getClass();
         WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
@@ -153,6 +165,7 @@ public class VideoProj {
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
+        renderActivity= context.getClass();
         WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
@@ -281,7 +294,7 @@ public class VideoProj {
     public void preRender(Runnable onFinish, ProgressPreRender onProgress){
         PreRenderer.progressPreRender=onProgress;
         askForBackgroundPermissions();
-        Intent intent = new Intent(context, context.getClass());
+        Intent intent = new Intent(context, renderActivity);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 
@@ -381,7 +394,7 @@ public class VideoProj {
 
         //askForBackgroundPermissions();
 
-        Intent intent = new Intent(context, context.getClass());
+        Intent intent = new Intent(context, renderActivity);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
 
@@ -527,6 +540,7 @@ public class VideoProj {
      * @param output The output forwarded to {@link VideoProj#renderInTo(String)}
      */
     public void startRenderActivityAndRenderInTo(String output){
+        setShowRenderProgressActivity(ProgressActivity.class);
         context.startActivity(new Intent(context,ProgressActivity.class));
         renderInTo(output,new SendProgressAsBroadcast(context));
     }
@@ -535,6 +549,7 @@ public class VideoProj {
      * Rendering with showing Progress in {@link ProgressActivity}
      */
     public void startRenderActivityAndRenderInTo(){
+        setShowRenderProgressActivity(ProgressActivity.class);
         context.startActivity(new Intent(context,ProgressActivity.class));
         render(new SendProgressAsBroadcast(context));
     }

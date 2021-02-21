@@ -3,7 +3,8 @@
     package="de.hlvsapps.androidvideolib">
 
     <application>
-        <activity android:name=".ProgressActivity"></activity>
+        <activity android:name=".ProgressActivity"
+            android:configChanges="orientation|screenSize"/>
     </application>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
