@@ -39,7 +39,7 @@ import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_D
 
 
 /**
- * Activity for Rendering Project. Don't Launch this Activity directly, instead use
+ * Activity for Rendering Project. Don't Launch this Activity directly, instead use {@link VideoProj#startRenderActivityAndRenderInTo()} or {@link VideoProj#startRenderActivityAndRenderInTo(String)}
  *
  * @author hlvs-apps
  */
