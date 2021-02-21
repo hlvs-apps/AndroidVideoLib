@@ -17,10 +17,12 @@
 
 package de.hlvsapps.androidvideolib;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VideoPart {
+public class VideoPart implements Serializable {
+    private static final long serialVersionUID = 45L;
     private final List<RenderTaskWrapper> renderTaskWrappers;
     private final List<VideoSegmentWithTime> segments;
     private int frameStartInProject;

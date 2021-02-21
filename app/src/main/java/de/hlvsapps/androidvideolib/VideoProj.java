@@ -41,9 +41,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jcodec.common.model.Picture;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -58,30 +62,41 @@ import java.util.concurrent.Executor;
  *
  * @author hlvs-apps
  */
-public class VideoProj {
+public class VideoProj implements Serializable {
+    private static final long serialVersionUID = 42L;
+    // Custom deserialization logic
+    // This will allow us to have additional deserialization logic on top of the default one e.g. decrypting object after deserialization
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        ois.defaultReadObject(); // Calling the default deserialization logic
+        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
+        utils.setVideoFolderName(videoFolderName);
+        updateRenderTimeLine();
+    }
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
     public static final String DATA_ID_RENDERER="DATA_ID_RENDERER";
     public static final String END_OF_WAKE_LOCK_ID="::RenderLock";
-    public static String WAKE_LOCK_ID ;
+    transient public static String WAKE_LOCK_ID ;
 
     public static final int NOTIFICATION_ID =1034;
 
     NotificationManagerCompat notificationManager;
     NotificationCompat.Builder builder;
 
-    List<String> [] inputs_from_last_render;
-    Picture pic0=null;
+    transient List<String> [] inputs_from_last_render;
+    transient Picture pic0=null;
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
-    private Class renderActivity;
-    private PowerManager.WakeLock wakeLock;
-    private int length;
-    private double length_seconds;
+    transient private Class renderActivity;
+    transient private PowerManager.WakeLock wakeLock;
+    transient private int length;
+    transient private double length_seconds;
+
+    private List<UriIdentifier> allVideoUris;
 
     private String videoFolderName;
 
-    private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
+    transient private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
 
     private Rational fps=null;
 
@@ -186,6 +201,24 @@ public class VideoProj {
     }
 
     /**
+     * Get all VideoParts set as Input.
+     * When you want to make Changes, please set the new List with {@link VideoProj#setInput(List)}, OR call {@link VideoProj#updateRenderTimeLine()}, otherwise Changes will have no Effect.
+     * @return all VideoParts
+     */
+    public List<VideoPart> getInput() {
+        return input;
+    }
+
+    /**
+     * Sets all Inputs, and Imports them
+     * @param input All Inputs
+     */
+    public void setInput(List<VideoPart> input) {
+        this.input = input;
+        updateRenderTimeLine();
+    }
+
+    /**
      * Get the output folder for your rendered video in gallery
      * @return output folder for your rendered video in gallery
      */
@@ -256,10 +289,40 @@ public class VideoProj {
     }
 
 
-    private void updateRenderTimeLine(){
+    /**
+     * Updates the {@link RendererTimeLine} of the Project.
+     * Call this when you changed the inputs
+     */
+    public void updateRenderTimeLine(){
         length=rendererTimeLine.getVideoLengthInFrames(this);
         length_seconds=rendererTimeLine.getVideoLengthInSeconds(this);
         renderTasksWithMatchingUriIdentifierPairs = rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
+        if(allVideoUris==null)allVideoUris=new ArrayList<>();
+        allVideoUris.addAll(rendererTimeLine.getAllUrisFromUriIdentifiers());
+        allVideoUris= new ArrayList<>(new HashSet<>(allVideoUris));
+    }
+
+    /**
+     * Adds a {@link UriIdentifier} to Uri Sources that is not contained in a {@link VideoSegment}, and so can not be rendered but you want to have stored.
+     * The List of UriIdentifiers of this Project can not contain Duplicates.
+     *
+     * When the UriIdentifier is in a {@link VideoSegment} you add with a {@link VideoPart}, this UriIdentifier will be added automatically.
+     *
+     * You can get the List with {@link VideoProj#getAllVideoUris()}
+     * @param i The UriIdentifier you want to add.
+     */
+    public void addUriIdentifierWithoutSegment(UriIdentifier i){
+        if(allVideoUris==null)allVideoUris=new ArrayList<>();
+        allVideoUris.add(i);
+        allVideoUris= new ArrayList<>(new HashSet<>(allVideoUris));
+    }
+
+    /**
+     * Get all {@link UriIdentifier} contained in that Project, added automatically, and manually with {@link VideoProj#addUriIdentifierWithoutSegment(UriIdentifier)}.
+     * @return A List with a Copy of {@link VideoProj#allVideoUris} list.
+     */
+    public List<UriIdentifier> getAllVideoUris() {
+        return new ArrayList<>(allVideoUris);
     }
 
     /**
@@ -306,8 +369,8 @@ public class VideoProj {
 
         notificationManager = NotificationManagerCompat.from(context.getApplicationContext());
         builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
-        builder.setContentTitle("Rendering")
-                .setContentText("Rendering in progress")
+        builder.setContentTitle("Importing")
+                .setContentText("Importing in progress")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW);

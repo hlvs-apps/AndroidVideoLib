@@ -19,7 +19,10 @@ package de.hlvsapps.androidvideolib;
 
 import android.graphics.Bitmap;
 
-public class VideoBitmap {
+import java.io.Serializable;
+
+public class VideoBitmap implements Serializable {
+    private static final long serialVersionUID = 46L;
     private final Bitmap bitmap;
     private final String identifier;
     public VideoBitmap(Bitmap bitmap,String identifier){

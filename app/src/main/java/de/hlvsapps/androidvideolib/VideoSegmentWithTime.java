@@ -17,9 +17,11 @@
 
 package de.hlvsapps.androidvideolib;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class VideoSegmentWithTime extends VideoSegment{
+public class VideoSegmentWithTime extends VideoSegment implements Serializable {
+    private static final long serialVersionUID = 44L;
     private final int startTimeInPart;
     public VideoSegmentWithTime(List<UriIdentifier> parts,int startTimeInPart) {
         super(parts);

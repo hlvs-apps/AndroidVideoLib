@@ -17,12 +17,15 @@
 
 package de.hlvsapps.androidvideolib;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class VideoSegment {
+public class VideoSegment implements Serializable {
+    private static final long serialVersionUID = 43L;
     private List<UriIdentifier> uriIdentifiers;
     public VideoSegment(List<UriIdentifier> parts){
-        this.uriIdentifiers =parts;
+        setUriIdentifiers(parts);
     }
 
     public List<UriIdentifier> getUriIdentifiers() {
@@ -30,10 +33,14 @@ public class VideoSegment {
     }
 
     public void addUriIdentifier(UriIdentifier uriIdentifier){
+        if(uriIdentifier.getStartInVideoSegment()==UriIdentifier.START_IN_VIDEO_SEGMENT_NOT_SET) throw new IllegalStateException("Start must be set");
         uriIdentifiers.add(uriIdentifier);
     }
 
     public void setUriIdentifiers(List<UriIdentifier> uriIdentifiers){
-        this.uriIdentifiers = uriIdentifiers;
+        this.uriIdentifiers=new ArrayList<>();
+        for (UriIdentifier i:uriIdentifiers){
+            addUriIdentifier(i);
+        }
     }
 }

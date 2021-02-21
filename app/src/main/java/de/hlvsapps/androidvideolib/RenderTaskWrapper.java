@@ -17,7 +17,10 @@
 
 package de.hlvsapps.androidvideolib;
 
-public class RenderTaskWrapper {
+import java.io.Serializable;
+
+public class RenderTaskWrapper implements Serializable {
+    private static final long serialVersionUID = 51L;
     private final RenderTask renderTask;
     private final int frameInPartFrom;
     private final int frameInPartTo;

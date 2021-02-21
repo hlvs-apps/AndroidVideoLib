@@ -19,11 +19,13 @@ package de.hlvsapps.androidvideolib;
 
 import android.net.Uri;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class RendererTimeLine {
+public class RendererTimeLine implements Serializable {
+    private static final long serialVersionUID = 52L;
     private final List<UriIdentifierPair> uriIdentifierPairs;
     private final List<RenderTaskWrapper> renderTaskWrappers;
     private int videoLengthInFrames;

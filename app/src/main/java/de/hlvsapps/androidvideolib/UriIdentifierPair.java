@@ -17,7 +17,10 @@
 
 package de.hlvsapps.androidvideolib;
 
-public class UriIdentifierPair {
+import java.io.Serializable;
+
+public class UriIdentifierPair implements Serializable {
+    private static final long serialVersionUID = 48L;
     private final UriIdentifier uriIdentifier;
     private final Integer frameStartInProject;
     private int lengthInFrames;

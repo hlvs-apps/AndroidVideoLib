@@ -17,9 +17,11 @@
 
 package de.hlvsapps.androidvideolib;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper{
+public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper implements Serializable {
+    private static final long serialVersionUID = 50L;
     private final List<UriIdentifierPair> matchingUriIdentifierPairs;
     public RenderTaskWrapperWithUriIdentifierPairs(RenderTaskWrapper w,List<UriIdentifierPair> matchingUriIdentifierPairs){
         super(w.getRenderTask(),w.getFrameInPartFrom(),w.getFrameInPartTo(),w.getFrameInProjectFrom(),w.getFrameInProjectTo());
