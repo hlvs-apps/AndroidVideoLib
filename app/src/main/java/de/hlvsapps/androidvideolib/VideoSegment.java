@@ -21,22 +21,43 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * A VideoSegment is a Container for {@link UriIdentifier}.
+ * @author hlvs-apps
+ */
 public class VideoSegment implements Serializable {
     private static final long serialVersionUID = 43L;
     private List<UriIdentifier> uriIdentifiers;
+
+    /**
+     * @param parts {@link List<UriIdentifier>} The UriIdentifiers to be contained in this {@link VideoSegment}
+     */
     public VideoSegment(List<UriIdentifier> parts){
         setUriIdentifiers(parts);
     }
 
+    /**
+     * Get all {@link UriIdentifier}s
+     * @return all {@link UriIdentifier}s contained in this {@link VideoSegment}
+     */
     public List<UriIdentifier> getUriIdentifiers() {
         return uriIdentifiers;
     }
 
+    /**
+     * Add {@link UriIdentifier} to {@link VideoSegment#uriIdentifiers}
+     * @param uriIdentifier The {@link UriIdentifier} to add.
+     */
     public void addUriIdentifier(UriIdentifier uriIdentifier){
         if(uriIdentifier.getStartInVideoSegment()==UriIdentifier.START_IN_VIDEO_SEGMENT_NOT_SET) throw new IllegalStateException("Start must be set");
         uriIdentifiers.add(uriIdentifier);
     }
 
+    /**
+     * Set new List of {@link UriIdentifier}s
+     * @param uriIdentifiers The new List to set as {@link VideoSegment#uriIdentifiers}
+     */
     public void setUriIdentifiers(List<UriIdentifier> uriIdentifiers){
         this.uriIdentifiers=new ArrayList<>();
         for (UriIdentifier i:uriIdentifiers){
