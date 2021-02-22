@@ -603,7 +603,7 @@ public class VideoProj implements Serializable {
 
 
     /**
-     * render a Frame at a Given Position. Because you can return Multiple Bitmaps in a {@link RenderTask}, this returns a List.
+     * Render a Frame at a Given Position. You must call <code>VideoProj#preRender</code> before. Because you can return Multiple Bitmaps in a {@link RenderTask}, this returns a List.
      * @param position The Position of the Frame you want to have
      * @return Returns a List of Bitmaps, and if no Renderer was found for the Task, it returns null.
      */
@@ -637,6 +637,30 @@ public class VideoProj implements Serializable {
             }
         }
         return null;
+    }
+
+    /**
+     * Gets a Frame from a specified {@link UriIdentifier} at given position.
+     * @param context Your Context
+     * @param identifier The {@link UriIdentifier}
+     * @param position The Position
+     * @return The Frame at given position as {@link Bitmap}.
+     */
+    public static Bitmap getFrameFromUriIdentifierAtPosition(Context context,UriIdentifier identifier,int position){
+        final String fileName=identifier.getIdentifier()+position;
+        return utils.readFromExternalStorage(context,fileName);
+    }
+
+    /**
+     * Gets a Frame from a specified {@link UriIdentifier} at given position.
+     * @param identifier The {@link UriIdentifier}
+     * @param position The Position
+     * @return The Frame at given position as {@link Bitmap}.
+     *
+     * @see VideoProj#getFrameFromUriIdentifierAtPosition(Context, UriIdentifier, int)
+     */
+    public Bitmap getFrameFromUriIdentifierAtPosition(UriIdentifier identifier,int position){
+        return getFrameFromUriIdentifierAtPosition(context,identifier,position);
     }
 
 
