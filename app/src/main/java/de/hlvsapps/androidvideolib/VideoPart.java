@@ -21,6 +21,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A VideoPart contains {@link VideoSegmentWithTime}s and {@link RenderTaskWrapper}s.
+ * Also it knows where it starts in {@link VideoProj}. A VideoPart can used as single source for a {@link VideoProj}, however you can add multiple VideoParts for more clarity.
+ *
+ * @author hlvs-apps
+ */
 public class VideoPart implements Serializable {
     private static final long serialVersionUID = 45L;
     private final List<RenderTaskWrapper> renderTaskWrappers;
@@ -61,7 +67,7 @@ public class VideoPart implements Serializable {
         return segments;
     }
 
-    @Deprecated
+
     public void addVideoSegment(VideoSegment segment, int startFrameInPart){
         segments.add(new VideoSegmentWithTime(segment.getUriIdentifiers(),startFrameInPart));
     }

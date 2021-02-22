@@ -20,14 +20,39 @@ package de.hlvsapps.androidvideolib;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * A {@link VideoSegment} with Time Information: When does this {@link VideoSegment} start in {@link VideoPart}
+ *
+ * @author hlvs-apps
+ */
 public class VideoSegmentWithTime extends VideoSegment implements Serializable {
     private static final long serialVersionUID = 44L;
     private final int startTimeInPart;
+
+    /**
+     * @param parts {@link UriIdentifier}s to be contained in this VideoSegment
+     * @param startTimeInPart When does this VideoSegment start in {@link VideoPart}, in Frames.
+     * @see VideoSegmentWithTime
+     */
     public VideoSegmentWithTime(List<UriIdentifier> parts,int startTimeInPart) {
         super(parts);
         this.startTimeInPart=startTimeInPart;
     }
 
+    /**
+     * The same as {@link VideoSegmentWithTime#VideoSegmentWithTime(List, int)}, but with VideoSegment instead of {@link UriIdentifier}s
+     * @param videoSegment The {@link VideoSegment} to extract the {@link UriIdentifier}s
+     * @param startTimeInPart When does this VideoSegment start in {@link VideoPart}, in Frames
+     * @see VideoSegmentWithTime
+     */
+    public VideoSegmentWithTime(VideoSegment videoSegment, int startTimeInPart){
+        this(videoSegment.getUriIdentifiers(),startTimeInPart);
+    }
+
+    /**
+     * Get start in {@link VideoPart}
+     * @return start in {@link VideoPart}, in frames
+     */
     public int getStartTimeInPart() {
         return startTimeInPart;
     }

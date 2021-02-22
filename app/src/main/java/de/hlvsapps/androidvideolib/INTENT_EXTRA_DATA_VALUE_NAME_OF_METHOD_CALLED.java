@@ -29,6 +29,7 @@ package de.hlvsapps.androidvideolib;
  * </table>
  *
  * @see SendProgressAsBroadcast
+ * @author hlvs-apps
  */
 public enum INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED{
     preRenderUpdateProgress,renderInstantiateProgressForRendering,renderUpdateProgressOfX,lastRenderUpdateProgressOfSavingVideo
