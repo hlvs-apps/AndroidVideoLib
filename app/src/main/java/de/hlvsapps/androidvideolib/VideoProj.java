@@ -94,6 +94,8 @@ public class VideoProj implements Serializable {
 
     private List<UriIdentifier> allVideoUris;
 
+    private List<UriIdentifier> manualVideoUris;
+
     private String videoFolderName;
 
     transient private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
@@ -297,24 +299,28 @@ public class VideoProj implements Serializable {
         length=rendererTimeLine.getVideoLengthInFrames(this);
         length_seconds=rendererTimeLine.getVideoLengthInSeconds(this);
         renderTasksWithMatchingUriIdentifierPairs = rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
-        if(allVideoUris==null)allVideoUris=new ArrayList<>();
+        allVideoUris=new ArrayList<>();
         allVideoUris.addAll(rendererTimeLine.getAllUrisFromUriIdentifiers());
+        if(manualVideoUris!=null)allVideoUris.addAll(manualVideoUris);
         allVideoUris= new ArrayList<>(new HashSet<>(allVideoUris));
     }
 
     /**
      * Adds a {@link UriIdentifier} to Uri Sources that is not contained in a {@link VideoSegment}, and so can not be rendered but you want to have stored.
-     * The List of UriIdentifiers of this Project can not contain Duplicates.
+     * The Lists of UriIdentifiers of this Project can not contain Duplicates.
      *
-     * When the UriIdentifier is in a {@link VideoSegment} you add with a {@link VideoPart}, this UriIdentifier will be added automatically.
+     * When the UriIdentifier is in a {@link VideoSegment} you add with a {@link VideoPart}, this UriIdentifier will be added automatically to {@link VideoProj#allVideoUris}.
      *
      * You can get the List with {@link VideoProj#getAllVideoUris()}
+     * Or when you only want manually added Uris with {@link VideoProj#getManualVideoUris()}.
      * @param i The UriIdentifier you want to add.
      */
     public void addUriIdentifierWithoutSegment(UriIdentifier i){
         if(allVideoUris==null)allVideoUris=new ArrayList<>();
+        if(manualVideoUris==null)manualVideoUris.add(i);
         allVideoUris.add(i);
         allVideoUris= new ArrayList<>(new HashSet<>(allVideoUris));
+        manualVideoUris= new ArrayList<>(new HashSet<>(manualVideoUris));
     }
 
     /**
@@ -323,6 +329,14 @@ public class VideoProj implements Serializable {
      */
     public List<UriIdentifier> getAllVideoUris() {
         return new ArrayList<>(allVideoUris);
+    }
+
+    /**
+     * Get all {@link UriIdentifier} added manually with {@link VideoProj#addUriIdentifierWithoutSegment(UriIdentifier)}.
+     * @return {@link VideoProj#manualVideoUris}
+     */
+    public List<UriIdentifier> getManualVideoUris(){
+        return manualVideoUris;
     }
 
     /**
