@@ -53,6 +53,10 @@ public class VideoPart implements Serializable {
         return renderTaskWrappers;
     }
 
+    /**
+     * Adds a {@link RenderTaskWrapper} to this Part
+     * @param wrapper The RenderTaskWrapper
+     */
     public void addRenderTaskWrapper(RenderTaskWrapper wrapper){
         utils.LogD(String.valueOf(frameStartInProject));
         utils.LogD(String.valueOf(wrapper.getFrameInPartTo()));

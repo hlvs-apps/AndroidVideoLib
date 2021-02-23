@@ -21,6 +21,12 @@ import android.graphics.Bitmap;
 
 import java.io.Serializable;
 
+
+/**
+ * A Bitmap with Identifier
+ *
+ * @author hlvs-apps
+ */
 public class VideoBitmap implements Serializable {
     private static final long serialVersionUID = 46L;
     private final Bitmap bitmap;
