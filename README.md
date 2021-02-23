@@ -19,7 +19,9 @@ and
 	        implementation 'com.github.hlvs-apps:AndroidVideoLib:v0.0.2-alpha'
 	}
 ```
+## Contributing
 
+Follow the [Contributing Guidelines](https://github.com/hlvs-apps/AndroidVideoLib/blob/master/CONTRIBUTING.md).
 ## License
 
 Copyright 2021 the authors of AndroidVideoLib
