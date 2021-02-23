@@ -16,3 +16,5 @@ Say that and follow the following stepps:
 3. Make Changes.
 4. Test it. Do your changes fix the Bug? Does the Project work?
 5. Create a pull request.
+
+Make sure to follow the [Contributor Covenant Code of Conduct](https://github.com/hlvs-apps/AndroidVideoLib/blob/master/CODE_OF_CONDUCT.md)
