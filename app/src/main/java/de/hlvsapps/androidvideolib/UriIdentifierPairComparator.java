@@ -20,6 +20,9 @@ package de.hlvsapps.androidvideolib;
 import java.io.Serializable;
 import java.util.Comparator;
 
+/**
+ * Compares {@link UriIdentifierPair}s
+ */
 public class UriIdentifierPairComparator implements Comparator<UriIdentifierPair>, Serializable {
     private static final long serialVersionUID = 47L;
     @Override

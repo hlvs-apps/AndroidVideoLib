@@ -44,6 +44,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utils class of this AndroidVideoLib
+ */
 public class utils {
 
     //CONSTANTS
