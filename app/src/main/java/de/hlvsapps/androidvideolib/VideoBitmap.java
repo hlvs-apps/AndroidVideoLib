@@ -20,20 +20,21 @@ package de.hlvsapps.androidvideolib;
 import android.graphics.Bitmap;
 
 import java.io.Serializable;
+import java.util.List;
 
 
 /**
- * A Bitmap with Identifier
+ * A Bitmap with UriIdentifier
  *
  * @author hlvs-apps
  */
 public class VideoBitmap implements Serializable {
     private static final long serialVersionUID = 46L;
     private final Bitmap bitmap;
-    private final String identifier;
-    public VideoBitmap(Bitmap bitmap,String identifier){
+    private final UriIdentifier uIdentifier;
+    public VideoBitmap(Bitmap bitmap, UriIdentifier uriIdentifier){
         this.bitmap=bitmap;
-        this.identifier=identifier;
+        this.uIdentifier=uriIdentifier;
     }
 
     public Bitmap getBitmap() {
@@ -41,6 +42,10 @@ public class VideoBitmap implements Serializable {
     }
 
     public String getIdentifier() {
-        return identifier;
+        return uIdentifier.getIdentifier();
+    }
+
+    public UriIdentifier getUriIdentifier(){
+        return uIdentifier;
     }
 }

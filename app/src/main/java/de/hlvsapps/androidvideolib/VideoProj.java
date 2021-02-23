@@ -385,6 +385,7 @@ public class VideoProj implements Serializable {
         builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
         builder.setContentTitle("Importing")
                 .setContentText("Importing in progress")
+                //TODO update
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
@@ -428,7 +429,7 @@ public class VideoProj implements Serializable {
 
 
     /**
-     * Ask for Background Execution Permissions.
+     * Ask for Background Execution Permissions. Do call this before Rendering
      */
     public void askForBackgroundPermissions(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -485,6 +486,7 @@ public class VideoProj implements Serializable {
         builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
         builder.setContentTitle("Rendering")
                 .setContentText("Rendering in progress")
+                //TODO update
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
@@ -618,16 +620,16 @@ public class VideoProj implements Serializable {
                     String fileName=p.getUriIdentifier().getIdentifier();
                     int i_for_video=position-p.getFrameStartInProject();
                     bitmap0.add(new VideoBitmap(
-                            utils.readFromExternalStorage(getContext(),fileName+i_for_video),p.getUriIdentifier().getIdentifier()));
+                            utils.readFromExternalStorage(getContext(),fileName+i_for_video),p.getUriIdentifier()));
                     utils.LogD(fileName+i_for_video);
                     i_for_video++;
                     if((position+1)<=to) {
                         bitmap1.add(new VideoBitmap(
-                                utils.readFromExternalStorage(getContext(), fileName + i_for_video), p.getUriIdentifier().getIdentifier()));
+                                utils.readFromExternalStorage(getContext(), fileName + i_for_video), p.getUriIdentifier()));
                         utils.LogD(fileName + i_for_video);
                     }else{
                         bitmap1.add(new VideoBitmap(
-                                null,p.getUriIdentifier().getIdentifier()
+                                null,p.getUriIdentifier()
                         ));
                         utils.LogD(fileName + i_for_video+" not added because it should not exist");
                     }
