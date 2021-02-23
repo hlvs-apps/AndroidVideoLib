@@ -17,8 +17,10 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.content.Context;
 import android.net.Uri;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -115,6 +117,28 @@ public class UriIdentifier implements Serializable {
 
     public void setCustomLengthInSeconds(int customLengthInSeconds) {
         this.customLengthInSeconds = customLengthInSeconds;
+    }
+
+    /**
+     * Gets the Length of the Video of the Uri in Frames
+     * Do not use this in AndroidVideoLib, instead use Cached Length in {@link UriIdentifierPair}
+     * @param c Your Context
+     * @return The Length in Frames
+     * @throws IOException Thrown by {@link utils#getMP4LengthInFrames(Context, Uri)}
+     */
+    public int getRealLengthInFrames(Context c) throws IOException {
+        return utils.getMP4LengthInFrames(c,uri);
+    }
+
+    /**
+     * Gets the Length of the Video of the Uri in Seconds
+     * Do not use this in AndroidVideoLib, instead use Cached Length in {@link UriIdentifierPair}
+     * @param c Your Context
+     * @return The Length in Seconds
+     * @throws IOException Thrown by {@link utils#getMP4LengthInSeconds(Context, Uri)}
+     */
+    public double getRealLengthInSeconds(Context c) throws IOException {
+        return utils.getMP4LengthInSeconds(c,uri);
     }
 
 
