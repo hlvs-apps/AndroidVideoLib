@@ -155,7 +155,11 @@ public class utils {
     }
 
      static int getMP4LengthInFrames(VideoProj proj,Uri src) throws IOException {
-        ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
+        return getMP4LengthInFrames(proj.getContext(),src);
+    }
+
+    public static int getMP4LengthInFrames(Context c,Uri src) throws IOException {
+        ContentResolver resolver = c.getApplicationContext().getContentResolver();
         FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(src, "r").getFileDescriptor())).getChannel());
         MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
         DemuxerTrack video_track = demuxer.getVideoTrack();
@@ -165,7 +169,11 @@ public class utils {
     }
 
      public static double getMP4LengthInSeconds(VideoProj proj,Uri src) throws IOException {
-        ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
+        return getMP4LengthInSeconds(proj.getContext(),src);
+    }
+
+    public static double getMP4LengthInSeconds(Context c, Uri src) throws IOException {
+        ContentResolver resolver = c.getApplicationContext().getContentResolver();
         FileChannelWrapper ch = new FileChannelWrapper((new FileInputStream(resolver.openFileDescriptor(src, "r").getFileDescriptor())).getChannel());
         MP4Demuxer demuxer = MP4Demuxer.createMP4Demuxer(ch);
         DemuxerTrack video_track = demuxer.getVideoTrack();
