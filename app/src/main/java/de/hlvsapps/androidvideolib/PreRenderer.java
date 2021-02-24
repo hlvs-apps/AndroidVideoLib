@@ -143,7 +143,7 @@ public class PreRenderer extends Worker {
         if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
         //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
         proj.getWakeLock().release();
-        if(whatDoAfter!=null)whatDoAfter.run();
+        if(whatDoAfter!=null)proj.getContext().runOnUiThread(whatDoAfter);
         proj=null;
         whatDoAfter=null;
         progressPreRender=null;
