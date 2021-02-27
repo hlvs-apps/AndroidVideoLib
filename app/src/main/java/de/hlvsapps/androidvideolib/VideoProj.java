@@ -40,6 +40,7 @@ import androidx.work.WorkManager;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jcodec.common.model.Picture;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -66,7 +67,7 @@ public class VideoProj implements Serializable {
     private static final long serialVersionUID = 42L;
     // Custom deserialization logic
     // This will allow us to have additional deserialization logic on top of the default one e.g. decrypting object after deserialization
-    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private void readObject(@NotNull ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject(); // Calling the default deserialization logic
         WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
