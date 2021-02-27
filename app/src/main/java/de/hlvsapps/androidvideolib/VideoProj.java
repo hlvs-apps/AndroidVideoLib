@@ -75,6 +75,8 @@ public class VideoProj implements Serializable {
     }
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
     public static final String DATA_ID_RENDERER="DATA_ID_RENDERER";
+    public static final String DATA_ID_RENDERER_START="DATA_ID_RENDERER_START";
+    public static final String DATA_ID_RENDERER_END="DATA_ID_RENDERER_END";
     public static final String END_OF_WAKE_LOCK_ID="::RenderLock";
     transient public static String WAKE_LOCK_ID ;
 
@@ -515,22 +517,23 @@ public class VideoProj implements Serializable {
                     .build();
         }
 
-        int i=0;
-        renderTasksWithMatchingUriIdentifierPairs = rendererTimeLine.getRenderTasksWithMatchingUriIdentifierPairs(this);
-        inputs_from_last_render = new List[renderTasksWithMatchingUriIdentifierPairs.size()];
-        which_task_finished=new boolean[renderTasksWithMatchingUriIdentifierPairs.size()];
-        progressRender.instantiateProgressesForRendering(renderTasksWithMatchingUriIdentifierPairs.size());
+        int num_of_workers=Runtime.getRuntime().availableProcessors()*2+4;
+        inputs_from_last_render = new List[num_of_workers];
+        which_task_finished=new boolean[num_of_workers];
+        progressRender.instantiateProgressesForRendering(num_of_workers);
         Renderer.progressRender=progressRender;
         LastRenderer.progressRender=progressRender;
-        for(RenderTaskWrapperWithUriIdentifierPairs ignored:renderTasksWithMatchingUriIdentifierPairs) {
+        int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
+        for(int i=0;i<num_of_workers;i++) {
             Data.Builder b = new Data.Builder();
             b.putInt(DATA_ID_RENDERER, i);
+            b.putInt(DATA_ID_RENDERER_START,i*frames_per_worker);
+            b.putInt(DATA_ID_RENDERER_END, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
                     .setConstraints(constraints)
                     .setInputData(b.build())
                     .build();
             WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render"+i, ExistingWorkPolicy.REPLACE, renderRequest);
-            i++;
         }
     }
 
@@ -634,9 +637,8 @@ public class VideoProj implements Serializable {
                         ));
                         utils.LogD(fileName + i_for_video+" not added because it should not exist");
                     }
-                    return wrapper.getRenderTask().render(bitmap0, bitmap1, position);
                 }
-
+                return wrapper.getRenderTask().render(bitmap0, bitmap1, position);
             }
         }
         return null;
@@ -652,6 +654,10 @@ public class VideoProj implements Serializable {
     public static Bitmap getFrameFromUriIdentifierAtPosition(Context context,UriIdentifier identifier,int position){
         final String fileName=identifier.getIdentifier()+position;
         return utils.readFromExternalStorage(context,fileName);
+    }
+
+    List<RenderTaskWrapperWithUriIdentifierPairs> getRenderTasksWithMatchingUriIdentifierPairs() {
+        return renderTasksWithMatchingUriIdentifierPairs;
     }
 
     /**

@@ -91,16 +91,16 @@ public class utils {
     }
 
      static void saveToExternalExportStorage(Bitmap bitmapImage, Context c, String name){
-        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-        // path to /data/data/yourapp/app_data/imageDir
+         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+         // path to /data/data/yourapp/app_data/imageDir
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-             directory=new File(cw.getNoBackupFilesDir(),"imageCacheExportDirVideoExport");
+             directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
              if(!directory.exists()){
                  directory.mkdirs();
              }
          }else{
-             directory = cw.getDir("imageCacheExportDirVideoExport",Context.MODE_PRIVATE);
+             directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
          }
         // Create imageDir
         File mypath=new File(directory,name);
@@ -113,15 +113,15 @@ public class utils {
     }
 
      static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
-        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-             directory=new File(cw.getNoBackupFilesDir(),"imageCacheExportDirVideoExport");
+             directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
              if(!directory.exists()){
                  directory.mkdirs();
              }
          }else{
-             directory = cw.getDir("imageCacheExportDirVideoExport",Context.MODE_PRIVATE);
+             directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
          }
         File f=new File(directory, name);
         if(f.exists()) {
