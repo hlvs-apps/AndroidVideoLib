@@ -524,20 +524,32 @@ public class VideoProj implements Serializable {
         Renderer.progressRender=progressRender;
         LastRenderer.progressRender=progressRender;
         int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
-        for(int i=0;i<num_of_workers;i++) {
+        if(frames_per_worker<0) {
             Data.Builder b = new Data.Builder();
-            b.putInt(DATA_ID_RENDERER, i);
-            b.putInt(DATA_ID_RENDERER_START,i*frames_per_worker);
-            b.putInt(DATA_ID_RENDERER_END, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
+            b.putInt(DATA_ID_RENDERER, 0);
+            b.putInt(DATA_ID_RENDERER_START, 0);
+            b.putInt(DATA_ID_RENDERER_END, -1);
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
                     .setConstraints(constraints)
                     .setInputData(b.build())
                     .build();
-            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render"+i, ExistingWorkPolicy.REPLACE, renderRequest);
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render0", ExistingWorkPolicy.REPLACE, renderRequest);
+        }else {
+            for (int i = 0; i < num_of_workers; i++) {
+                Data.Builder b = new Data.Builder();
+                b.putInt(DATA_ID_RENDERER, i);
+                b.putInt(DATA_ID_RENDERER_START, i * frames_per_worker);
+                b.putInt(DATA_ID_RENDERER_END, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
+                OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
+                        .setConstraints(constraints)
+                        .setInputData(b.build())
+                        .build();
+                WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render" + i, ExistingWorkPolicy.REPLACE, renderRequest);
+            }
         }
     }
 
-    void startLastRender(int which_renderer){
+    synchronized void startLastRender(int which_renderer){
         which_task_finished[which_renderer]=true;
         LastRenderer.proj=this;
         if(utils.areAllTrue(which_task_finished)){
