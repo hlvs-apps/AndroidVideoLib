@@ -16,6 +16,7 @@
  -----------------------------------------------------------------------------*/
 
 package de.hlvsapps.androidvideolib;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -23,7 +24,6 @@ import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
-import androidx.work.Data;
 import androidx.work.ListenableWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -103,7 +103,7 @@ public class PreRenderer extends Worker {
                                         picture = pic3;
                                     }
                                     if (ii == 0 && proj.pic0 == null) {
-                                        proj.pic0 = picture;
+                                        proj.pic0 = Picture.copyPicture(picture);
                                     }
                                     utils.LogI("Save Image");
                                     Bitmap bitmap = AndroidUtil.toBitmap(picture);
