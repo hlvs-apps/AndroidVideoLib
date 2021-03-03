@@ -122,6 +122,7 @@ public class PreRenderer extends Worker {
                             }
                         }
                     }
+
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
