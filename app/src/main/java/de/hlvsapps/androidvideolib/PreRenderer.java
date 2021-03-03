@@ -110,7 +110,7 @@ public class PreRenderer extends Worker {
                                     final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
                                     proj.setNotificationProgress(length * 10000, value, false);
                                     if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
-//                                    setProgressAsync(new Data.Builder()
+                                    //setProgressAsync(new Data.Builder()
 //                                            .putInt("progress", value)
 //                                            .putInt("max", length * 100)
 //                                            .build());
