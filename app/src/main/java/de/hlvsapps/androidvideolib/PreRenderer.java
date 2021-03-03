@@ -79,7 +79,6 @@ public class PreRenderer extends Worker {
         proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
 
         utils.LogI("PreRender");
-
         try {
             List<UriIdentifierPair> workList = proj.getAllUriIdentifierPairsFromInput();
             int length = workList.size();
