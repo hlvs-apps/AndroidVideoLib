@@ -19,6 +19,9 @@ package de.hlvsapps.androidvideolib;
 
 import org.jcodec.common.model.RationalLarge;
 
+/**
+ * copied from JCodec
+ */
 public class Rational extends org.jcodec.common.model.Rational {
     public Rational(int num, int den) {
         super(num, den);
