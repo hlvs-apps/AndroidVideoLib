@@ -57,7 +57,6 @@ public class PreRenderer extends Worker {
         //this.proj=proj;
     }
 
-
     @NotNull
     public ListenableWorker.Result doWork(){
         if(proj!=null) {
