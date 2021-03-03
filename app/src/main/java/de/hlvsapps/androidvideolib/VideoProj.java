@@ -115,7 +115,6 @@ public class VideoProj implements Serializable {
         renderActivity=a;
     }
 
-
     /**
      * Constructor of {@link VideoProj}.
      * @param outputname The Name of the Output of the Video.
