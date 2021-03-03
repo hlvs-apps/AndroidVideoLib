@@ -111,7 +111,7 @@ public class PreRenderer extends Worker {
                                     proj.setNotificationProgress(length * 10000, value, false);
                                     if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
                                     //setProgressAsync(new Data.Builder()
-//                                            .putInt("progress", value)
+                                    //        .putInt("progress", value)
 //                                            .putInt("max", length * 100)
 //                                            .build());
 
