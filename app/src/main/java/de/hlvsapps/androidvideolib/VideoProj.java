@@ -34,10 +34,7 @@ import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
-import androidx.work.Operation;
 import androidx.work.WorkManager;
-
-import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jcodec.common.model.Picture;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +48,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 
 import static android.content.Context.POWER_SERVICE;
 
