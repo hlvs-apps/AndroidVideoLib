@@ -19,6 +19,7 @@ package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
+import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
 import androidx.work.Data;
@@ -36,6 +37,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.content.Context.POWER_SERVICE;
+import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
 
 public class LastRenderer extends Worker {
     static VideoProj proj;
@@ -68,6 +72,9 @@ public class LastRenderer extends Worker {
     }
     
     private synchronized Result lastRender(){
+        PowerManager powerManager = (PowerManager) proj.getContext().getSystemService(POWER_SERVICE);
+        proj.setWakeLock(powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
+        proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
         SequenceEncoder enc=null;
         FileChannelWrapper ch=null;
         FileOutputStream stream1=null;
@@ -103,6 +110,7 @@ public class LastRenderer extends Worker {
             ch.close();
             stream1.close();
             if(d!=null)d.close();
+            proj.getWakeLock().release();
             utils.LogD("Complete Finished");
             progressRender=null;
             proj=null;
@@ -137,6 +145,7 @@ public class LastRenderer extends Worker {
             }catch (Exception e){
                 utils.LogE(e);
             }
+            if (proj != null) proj.getWakeLock().release();
         }
     }
 }
