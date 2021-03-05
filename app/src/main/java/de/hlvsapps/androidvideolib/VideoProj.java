@@ -722,7 +722,7 @@ public class VideoProj implements Serializable {
     public void startRenderActivityAndRenderInTo(){
         setShowRenderProgressActivity(ProgressActivity.class);
         context.startActivity(new Intent(context,ProgressActivity.class));
-        render(new SendProgressAsBroadcast(context));
+        render(new SendProgressAsBroadcast(context,true,true));
     }
 
     /**

@@ -17,9 +17,6 @@
 
 package de.hlvsapps.androidvideolib;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,12 +27,17 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_FINISHED;
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_MAX_PROGRESS;
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED;
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE;
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE;
 import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_PROGRESS;
+import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.broadcastToReceiveAction;
+import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.intentExtraBroadcastToReceiveAction;
 
 
 /**
@@ -46,7 +48,6 @@ import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_D
 public class ProgressActivity extends AppCompatActivity {
     private LocalBroadcastManager localBroadcastManager;
 
-    //TODO ADD LISTENER FOR EVENTS WHEN ACTIVITY IS NOT VISIBLE AND SAVE VALUES
     private final BroadcastReceiver br = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -56,6 +57,7 @@ public class ProgressActivity extends AppCompatActivity {
                     //Do Nothing, this will not happen
                     break;
                 case renderInstantiateProgressForRendering:
+                    tab.removeAllViews();
                     for (int i = 0; i < intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE, -1); i++) {
                         ProgressBar n = new ProgressBar(ProgressActivity.this,null, android.R.attr.progressBarStyleHorizontal);
                         n.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -66,10 +68,10 @@ public class ProgressActivity extends AppCompatActivity {
                     int num = intent.getIntExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE, -1);
                     if (num != -1) {
                         ProgressBar b = (ProgressBar) tab.getChildAt(num);
-                        while(b==null) {
+                        while(b==null) { // This never should happen
                             ProgressBar n = new ProgressBar(ProgressActivity.this, null, android.R.attr.progressBarStyleHorizontal);
                             n.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                            tab.addView(n, num);
+                            tab.addView(n, tab.getChildCount());
                             b = (ProgressBar) tab.getChildAt(num);
                         }
                         b.setMax(intent.getIntExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS, 1));
@@ -89,6 +91,8 @@ public class ProgressActivity extends AppCompatActivity {
 
     private TableLayout tab;
     private ProgressBar progressBar;
+
+    private boolean instantiate=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,13 +100,43 @@ public class ProgressActivity extends AppCompatActivity {
         localBroadcastManager=LocalBroadcastManager.getInstance(this);
         tab=findViewById(R.id.tab);
         progressBar=findViewById(R.id.progressBar2);
+        instantiate=true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         IntentFilter filter=new IntentFilter(SendProgressAsBroadcast.intentFilterAction);
         localBroadcastManager.registerReceiver(br, filter);
+        if(instantiate){
+            Intent intent = new Intent();
+            intent.setAction(broadcastToReceiveAction);
+            intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRenderInstantiateProgressForRendering);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            instantiate=false;
+        }
+        Intent intent = new Intent();
+        intent.setAction(broadcastToReceiveAction);
+        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRecordedBroadcastAndStopRecording);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        localBroadcastManager.unregisterReceiver(br);
+        Intent intent = new Intent();
+        intent.setAction(broadcastToReceiveAction);
+        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.startRecording);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
     protected void onDestroy() {
-        localBroadcastManager.unregisterReceiver(br);
+        Intent intent = new Intent();
+        intent.setAction(broadcastToReceiveAction);
+        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.close);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         super.onDestroy();
     }
 }
