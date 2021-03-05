@@ -573,7 +573,11 @@ public class VideoProj implements Serializable {
         which_task_finished[which_renderer]=true;
         LastRenderer.proj=this;
         if(utils.areAllTrue(which_task_finished)){
-            getWakeLock().release();
+            try {
+                getWakeLock().release();
+            }catch (Exception e){
+                utils.LogE("Ignore this",e);
+            }
 
             Renderer.proj=this;
             Constraints constraints;
