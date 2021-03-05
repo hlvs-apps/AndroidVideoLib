@@ -107,6 +107,15 @@ public class VideoProj implements Serializable {
 
     private RendererTimeLine rendererTimeLine;
 
+    Picture getPic0() {
+        return pic0;
+    }
+
+    void setPic0(Picture pic0) {
+        this.pic0 = pic0;
+        utils.LogD("New Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
+    }
+
     /**
      * Sets the Activity class to show render Progress.
      * @param a The Render Activity Class
