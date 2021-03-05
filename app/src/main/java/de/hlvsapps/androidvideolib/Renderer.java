@@ -19,11 +19,8 @@ package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.PowerManager;
-import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
-import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
@@ -32,9 +29,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static android.content.Context.POWER_SERVICE;
-import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
 
 
 public class Renderer extends Worker {
@@ -102,7 +96,7 @@ public class Renderer extends Worker {
                                     utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
                             utils.LogD(fileName + i_for_video);
                             i_for_video++;
-                            if (proj.inputs_from_last_render.length == (which_renderer + 1) ? (i + 1) < to : (i + 1) <= to) {
+                            if ((proj.inputs_from_last_render.length == (which_renderer + 1)) ? (i + 1) < to : (i + 1) <= to) {
                                 bitmap1.add(new VideoBitmap(
                                         utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
                                 utils.LogD(fileName + i_for_video);

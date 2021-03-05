@@ -528,9 +528,6 @@ public class VideoProj implements Serializable {
         }
 
         int num_of_workers=Runtime.getRuntime().availableProcessors()*2+4;
-        inputs_from_last_render = new List[num_of_workers];
-        which_task_finished=new boolean[num_of_workers];
-        if(progressRender!=null)progressRender.instantiateProgressesForRendering(num_of_workers);
         Renderer.progressRender=progressRender;
         LastRenderer.progressRender=progressRender;
         int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
@@ -539,6 +536,9 @@ public class VideoProj implements Serializable {
             if(num_of_workers<=0)num_of_workers=1;
             frames_per_worker=(int) (Math.floor((getLength()*1D)/num_of_workers)-1);
         }
+        inputs_from_last_render = new List[num_of_workers];
+        which_task_finished=new boolean[num_of_workers];
+        if(progressRender!=null)progressRender.instantiateProgressesForRendering(num_of_workers);
         if(frames_per_worker<0) {
             Data.Builder b = new Data.Builder();
             b.putInt(DATA_ID_RENDERER, 0);
