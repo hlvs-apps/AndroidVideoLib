@@ -534,6 +534,11 @@ public class VideoProj implements Serializable {
         Renderer.progressRender=progressRender;
         LastRenderer.progressRender=progressRender;
         int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
+        if(frames_per_worker<=0) {
+            num_of_workers=num_of_workers/4;
+            if(num_of_workers<=0)num_of_workers=1;
+            frames_per_worker=(int) (Math.floor((getLength()*1D)/num_of_workers)-1);
+        }
         if(frames_per_worker<0) {
             Data.Builder b = new Data.Builder();
             b.putInt(DATA_ID_RENDERER, 0);
