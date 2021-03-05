@@ -17,10 +17,16 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -35,7 +41,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
  *
  * @author hlvs-apps
  */
-public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender{
+public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender, Closeable {
 
     /**
      * Intent Extra Data Name for the Method currently sending Broadcast. The Possible Options are specified in {@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED}
@@ -72,14 +78,64 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
      */
     public static final String intentFilterAction="SendProgressAsBroadcast::intentFilterAction";
 
+    public static final String broadcastToReceiveAction ="SendProgressAsBroadcast::intentExtraBroadcastToReceive";
+
+    public static final String intentExtraBroadcastToReceiveAction ="SendProgressAsBroadcast::broadcastToReceiveAction";
+
     private final Context context;
+
+    private List<Intent> intentsSent=null;
+
+    private Intent intentInit=null;
+
+    private boolean record;
+
+    private final BroadcastReceiver br = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START serializableExtra = (INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START) intent.getSerializableExtra(intentExtraBroadcastToReceiveAction);
+            switch (serializableExtra) {
+                case startRecording:
+                    record=true;
+                    break;
+                case sendRenderInstantiateProgressForRendering:
+                    if(intentInit!=null) LocalBroadcastManager.getInstance(context).sendBroadcast(intentInit);
+                    break;
+                case sendRecordedBroadcastAndStopRecording:
+                    if(intentsSent!=null) for (Intent send : intentsSent)
+                        LocalBroadcastManager.getInstance(context).sendBroadcast(send);
+                    intentsSent=null;
+                    record=false;
+                    break;
+                case close:
+                    close();
+                    break;
+            }
+        }
+    };
+
+    private LocalBroadcastManager localBroadcastManager=null;
+
+    public SendProgressAsBroadcast(Context context,boolean registerReceiver,boolean startRecording){
+        this.context=context;
+        record=startRecording;
+        if(registerReceiver) {
+            localBroadcastManager = LocalBroadcastManager.getInstance(context);
+            IntentFilter filter = new IntentFilter(broadcastToReceiveAction);
+            localBroadcastManager.registerReceiver(br, filter);
+        }
+    }
+
+    public SendProgressAsBroadcast(Context context,boolean registerReceiver){
+        this(context,registerReceiver,false);
+    }
 
     /**
      * Constructor of {@link SendProgressAsBroadcast}.
      * @param context Your Context, which will be used to fire the Broadcasts
      */
     public SendProgressAsBroadcast(Context context){
-        this.context=context;
+        this(context,false);
     }
 
     /**
@@ -96,6 +152,10 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
         intent.putExtra(INTENT_EXTRA_DATA_NAME_PROGRESS,state);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS,max);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_FINISHED,finished);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
@@ -111,6 +171,7 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
         intent.setAction(intentFilterAction);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED, INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED.renderInstantiateProgressForRendering);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE,num);
+        intentInit=intent;
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
@@ -130,6 +191,10 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
         intent.putExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS,max);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_FINISHED,finished);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE,num);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
@@ -148,6 +213,15 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
         intent.putExtra(INTENT_EXTRA_DATA_NAME_PROGRESS,progress);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS,max);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_FINISHED,finished);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
+    @Override
+    public void close() {
+        if(localBroadcastManager!=null) localBroadcastManager.unregisterReceiver(br);
     }
 }
