@@ -29,7 +29,7 @@ import androidx.work.WorkerParameters;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
-import org.jcodec.common.model.Picture;
+import org.jcodec.common.model.ColorSpace;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
@@ -66,7 +66,9 @@ public class LastRenderer extends Worker {
     private List<String> getRealList(){
         List<String> result=new ArrayList<>();
         for(List<String> a:proj.inputs_from_last_render){
-            result.addAll(a);
+            for(String s:a){
+                if(s!=null)result.add(s);
+            }
         }
         return result;
     }
@@ -89,12 +91,14 @@ public class LastRenderer extends Worker {
             String[] reallist=  getRealList().toArray(new String[0]);
             int length=reallist.length;
             int i=0;
-            Picture pic0=proj.getPic0();
+            utils.LogD("get Color");
+            ColorSpace pic0=proj.getPic0().getColor();
+            utils.LogD("got Color");
             for (String name : reallist) {
                 //Amend
                 utils.LogD(String.valueOf(i));
                 utils.LogD(name);
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), pic0.getColor()));
+                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), pic0));
                 proj.setNotificationProgress(length, i, false);
                 /*setProgressAsync(new Data.Builder()
                         .putInt("progress",i)
