@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
@@ -92,6 +93,8 @@ public class ProgressActivity extends AppCompatActivity {
     private TableLayout tab;
     private ProgressBar progressBar;
 
+    private PowerManager.WakeLock l;
+
     private boolean instantiate=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +104,9 @@ public class ProgressActivity extends AppCompatActivity {
         tab=findViewById(R.id.tab);
         progressBar=findViewById(R.id.progressBar2);
         instantiate=true;
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        l=powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "androidvideolib::random_wake_lock");
+        l.acquire(/*100*60*1000L /*100 minutes*/);
     }
 
     @Override
@@ -137,6 +143,7 @@ public class ProgressActivity extends AppCompatActivity {
         intent.setAction(broadcastToReceiveAction);
         intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.close);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        l.release();
         super.onDestroy();
     }
 }
