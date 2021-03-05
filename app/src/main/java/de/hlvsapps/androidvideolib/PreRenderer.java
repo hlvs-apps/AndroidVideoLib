@@ -100,8 +100,8 @@ public class PreRenderer extends Worker {
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
                                     }
-                                    if (proj.pic0 == null) {
-                                        if(picture!=null)proj.pic0 = Picture.copyPicture(picture);
+                                    if (proj.getPic0() == null) {
+                                        if(picture!=null)proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     utils.LogI("Save Image");
                                     Bitmap bitmap = AndroidUtil.toBitmap(picture);

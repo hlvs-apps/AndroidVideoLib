@@ -22,7 +22,6 @@ import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
-import androidx.work.Data;
 import androidx.work.ListenableWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
@@ -93,7 +92,7 @@ public class LastRenderer extends Worker {
                 //Amend
                 utils.LogD(String.valueOf(i));
                 utils.LogD(name);
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), proj.pic0.getColor()));
+                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), proj.getPic0().getColor()));
                 proj.setNotificationProgress(length, i, false);
                 /*setProgressAsync(new Data.Builder()
                         .putInt("progress",i)
