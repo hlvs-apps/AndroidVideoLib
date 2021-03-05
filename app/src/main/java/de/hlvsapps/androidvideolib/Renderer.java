@@ -119,7 +119,7 @@ public class Renderer extends Worker {
                                             utils.LogD(fileOutName);
                                             utils.saveToExternalExportStorage(bitmap, proj.getContext(), fileOutName);
                                         } else {
-                                            fileOutName = id1 == null ? id1 + i : id2 + (i + 1);
+                                            fileOutName = id1 != null ? id1 + i : id2 + (i + 1);
                                             utils.LogD(fileOutName);
                                         }
                                         proj.inputs_from_last_render[which_renderer].add(fileOutName);
