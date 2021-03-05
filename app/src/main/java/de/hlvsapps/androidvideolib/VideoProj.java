@@ -83,17 +83,19 @@ public class VideoProj implements Serializable {
     NotificationManagerCompat notificationManager;
     NotificationCompat.Builder builder;
 
-    transient List<String> [] inputs_from_last_render;
-    transient Picture pic0=null;
+    List<String> [] inputs_from_last_render;
+    Picture pic0=null;
+
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
-    transient private Class renderActivity;
-    transient private PowerManager.WakeLock wakeLock;
+
+    private Class renderActivity;
+    private PowerManager.WakeLock wakeLock;
     transient private int length;
     transient private double length_seconds;
 
-    private List<UriIdentifier> allVideoUris;
+    transient private List<UriIdentifier> allVideoUris;
 
     private List<UriIdentifier> manualVideoUris;
 
