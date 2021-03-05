@@ -110,6 +110,7 @@ public class VideoProj implements Serializable {
     private RendererTimeLine rendererTimeLine;
 
     Picture getPic0() {
+        utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
         return pic0;
     }
 
