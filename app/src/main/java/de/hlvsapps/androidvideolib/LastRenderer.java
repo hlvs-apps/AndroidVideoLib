@@ -29,6 +29,7 @@ import androidx.work.WorkerParameters;
 import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
+import org.jcodec.common.model.Picture;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
@@ -41,7 +42,7 @@ import static android.content.Context.POWER_SERVICE;
 import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
 
 public class LastRenderer extends Worker {
-    static VideoProj proj;
+    static VideoProj proj=null;
 
     static ProgressRender progressRender=null;
     public LastRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
@@ -88,11 +89,12 @@ public class LastRenderer extends Worker {
             String[] reallist=  getRealList().toArray(new String[0]);
             int length=reallist.length;
             int i=0;
+            Picture pic0=proj.getPic0();
             for (String name : reallist) {
                 //Amend
                 utils.LogD(String.valueOf(i));
                 utils.LogD(name);
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), proj.getPic0().getColor()));
+                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), pic0.getColor()));
                 proj.setNotificationProgress(length, i, false);
                 /*setProgressAsync(new Data.Builder()
                         .putInt("progress",i)
