@@ -117,7 +117,7 @@ public class Renderer extends Worker {
                                         if (id1 == null && id2 == null) {
                                             fileOutName = "VIDEO_EXPORT_NAME_ExternalExportStorage_VIDEORenderer" + which_renderer + "_" + actual_num_of_saved_image;
                                             utils.LogD(fileOutName);
-                                            utils.saveToExternalExportStorage(bitmap, proj.getContext(), fileOutName);
+                                            utils.saveToExternalStorage(bitmap, proj.getContext(), fileOutName);
                                         } else {
                                             fileOutName = id1 != null ? id1 + i : id2 + (i + 1);
                                             utils.LogD(fileOutName);

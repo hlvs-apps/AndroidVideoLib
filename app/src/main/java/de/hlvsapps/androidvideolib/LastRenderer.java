@@ -88,8 +88,8 @@ public class LastRenderer extends Worker {
             d= (ParcelFileDescriptor) re.get(1);
             ch = new FileChannelWrapper(stream1.getChannel());
             enc = SequenceEncoder.createWithFps(ch, proj.getFps());
-            String[] reallist=  getRealList().toArray(new String[0]);
-            int length=reallist.length;
+            List<String> reallist=  getRealList();
+            int length=reallist.size();
             int i=0;
             utils.LogD("get Color");
             ColorSpace pic0=proj.getPic0().getColor();

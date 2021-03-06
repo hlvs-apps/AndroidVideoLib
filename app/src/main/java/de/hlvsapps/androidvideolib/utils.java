@@ -83,33 +83,10 @@ public class utils {
             LogE(e);
         }
     }
-
      static boolean areAllTrue(boolean... array)
     {
         for(boolean b : array) if(!b) return false;
         return true;
-    }
-
-     static void saveToExternalExportStorage(Bitmap bitmapImage, Context c, String name){
-         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-         // path to /data/data/yourapp/app_data/imageDir
-         File directory;
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-             directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
-             if(!directory.exists()){
-                 directory.mkdirs();
-             }
-         }else{
-             directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
-         }
-        // Create imageDir
-        File mypath=new File(directory,name);
-        try (FileOutputStream fos= new FileOutputStream(mypath)){
-            // Use the compress method on the BitMap object to write image to the OutputStream
-            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
-        } catch (Exception e) {
-            LogE(e);
-        }
     }
 
      static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
