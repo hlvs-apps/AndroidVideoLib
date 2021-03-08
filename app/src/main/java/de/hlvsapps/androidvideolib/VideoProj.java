@@ -44,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -107,9 +108,29 @@ public class VideoProj implements Serializable {
 
     private Rational fps=null;
 
+    private BigDecimal scaleFactor=BigDecimal.valueOf(1);
+
     private boolean[] which_task_finished;
 
     private RendererTimeLine rendererTimeLine;
+
+    /**
+     * Sets the Scale Factor for preRendering.
+     * Default 1.
+     *
+     * @param scaleFactor The scale Factor
+     */
+    public void setScaleFactor(BigDecimal scaleFactor) {
+        this.scaleFactor = scaleFactor;
+    }
+
+    /**
+     * Gets the Scale Factor for preRendering
+     * @return the Scale Factor for preRendering
+     */
+    public BigDecimal getScaleFactor() {
+        return scaleFactor;
+    }
 
     Picture getPic0() {
         utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
