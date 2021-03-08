@@ -18,3 +18,4 @@ Say that and follow the following stepps:
 5. Create a pull request.
 
 Make sure to follow the [Contributor Covenant Code of Conduct](https://github.com/hlvs-apps/AndroidVideoLib/blob/master/CODE_OF_CONDUCT.md)
+Also don't forget to enter your name in the [Authors List](https://github.com/hlvs-apps/AndroidVideoLib/blob/master/AUTHORS.md)
