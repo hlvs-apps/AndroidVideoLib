@@ -33,6 +33,8 @@ import java.util.List;
 
 public class Renderer extends Worker {
 
+    static final String startOfFileName="VIDEO_EXPORT_NAME_ExternalExportStorage_VIDEORenderer";
+
     static VideoProj proj;
 
     static ProgressRender progressRender=null;
@@ -86,7 +88,7 @@ public class Renderer extends Worker {
                 if (progressRender != null)
                     progressRender.updateProgressOfX(which_renderer, actual_state, max, false);
                 for (RenderTaskWrapperWithUriIdentifierPairs wrapper : proj.getRenderTasksWithMatchingUriIdentifierPairs()) {
-                    if (i >= wrapper.getFrameInProjectFrom() && i <= to) {
+                    if (i >= wrapper.getFrameInProjectFrom()) {
                         List<VideoBitmap> bitmap0 = new ArrayList<>();
                         List<VideoBitmap> bitmap1 = new ArrayList<>();
                         for (UriIdentifierPair p : wrapper.getMatchingUriIdentifierPairs()) {
@@ -94,17 +96,17 @@ public class Renderer extends Worker {
                             int i_for_video = i - p.getFrameStartInProject();
                             bitmap0.add(new VideoBitmap(
                                     utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
-                            utils.LogD(fileName + i_for_video);
+                            utils.LogD("Input: "+fileName + i_for_video);
                             i_for_video++;
                             if ((proj.inputs_from_last_render.length == (which_renderer + 1)) ? (i + 1) < to : (i + 1) <= to) {
                                 bitmap1.add(new VideoBitmap(
                                         utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
-                                utils.LogD(fileName + i_for_video);
+                                //utils.LogD(fileName + i_for_video);
                             } else {
                                 bitmap1.add(new VideoBitmap(
                                         null, p.getUriIdentifier()
                                 ));
-                                utils.LogD(fileName + i_for_video + " not added because it should not exist");
+                                //utils.LogD(fileName + i_for_video + " not added because it should not exist");
                             }
                         }
                         try {
@@ -115,12 +117,12 @@ public class Renderer extends Worker {
                                         String id2 = identifierBitmapInVideoBitmaps(bitmap1, bitmap);
                                         String fileOutName;
                                         if (id1 == null && id2 == null) {
-                                            fileOutName = "VIDEO_EXPORT_NAME_ExternalExportStorage_VIDEORenderer" + which_renderer + "_" + actual_num_of_saved_image;
-                                            utils.LogD(fileOutName);
+                                            fileOutName = startOfFileName+ which_renderer + "_" + actual_num_of_saved_image;
+                                            utils.LogD("Output: "+fileOutName);
                                             utils.saveToExternalStorage(bitmap, proj.getContext(), fileOutName);
                                         } else {
                                             fileOutName = id1 != null ? id1 + i : id2 + (i + 1);
-                                            utils.LogD(fileOutName);
+                                            utils.LogD("Output: "+fileOutName);
                                         }
                                         proj.inputs_from_last_render[which_renderer].add(fileOutName);
                                         actual_num_of_saved_image++;

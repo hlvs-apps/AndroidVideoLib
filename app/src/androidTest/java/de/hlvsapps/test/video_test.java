@@ -17,26 +17,24 @@
 
 package de.hlvsapps.test;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.work.WorkInfo;
-import androidx.work.WorkManager;
-
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.MediaStore;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import de.hlvsapps.androidvideolib.R;
-import de.hlvsapps.androidvideolib.Rational;
 import de.hlvsapps.androidvideolib.RenderTaskWrapper;
 import de.hlvsapps.androidvideolib.UriIdentifier;
 import de.hlvsapps.androidvideolib.VideoBitmap;
@@ -48,16 +46,58 @@ import de.hlvsapps.androidvideolib.utils;
 public class video_test extends AppCompatActivity {
 
     private final int PICK_VIDEO_REQUEST = 190;
-    ProgressBar progressBar;
-    TextView textView;
+    private ProgressBar progressBar;
+    private TextView textView;
+    private Button next;
+    private Button before;
+    private ImageView imageView;
+    private int i=0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video_test);
 
+        Button failure=findViewById(R.id.failure);
+        Button finish=findViewById(R.id.finish);
+
+        failure.setOnClickListener(v -> {
+            setResult(RESULT_CANCELED);
+            finish();
+        });
+
+        finish.setOnClickListener(v -> {
+            setResult(RESULT_OK);
+            finish();
+        });
+
+
         Button choose=findViewById(R.id.choose);
         textView=findViewById(R.id.textView);
         progressBar=findViewById(R.id.progressBar);
+        next=findViewById(R.id.next);
+        before=findViewById(R.id.before);
+        imageView = findViewById(R.id.imageView);
+        next.setOnClickListener(v -> {
+            try {
+                i++;
+                Bitmap img = utils.readFromExternalStorage(this, "Test" + i);
+                textView.setText("Current Pos: " + i);
+                imageView.setImageBitmap(img);
+            }catch(Exception e){
+                utils.LogE(e);
+            }
+        }
+        );
+        before.setOnClickListener(v -> {
+            try {
+                i--;
+                Bitmap img=utils.readFromExternalStorage(this,"Test"+i);
+                textView.setText("Current Pos: "+i);
+                imageView.setImageBitmap(img);
+            }catch(Exception e){
+                utils.LogE(e);
+            }
+        });
         choose.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
             intent.setType("video/*");
@@ -82,33 +122,13 @@ public class video_test extends AppCompatActivity {
          */
     }
 
-    @Override
-    protected void onResume() {
-        if (WorkManager.getInstance(getApplicationContext()).getWorkInfosForUniqueWorkLiveData("Render").hasObservers()) {
-            WorkManager.getInstance(getApplicationContext()).getWorkInfosForUniqueWorkLiveData("Render").removeObservers(this);
-        }
-        WorkManager.getInstance(getApplicationContext()).getWorkInfosForUniqueWorkLiveData("Render").observe(this, workInfos -> {
-            if (workInfos.size() > 0) {
-                WorkInfo info = workInfos.get(0);
-                int progress1 = info.getProgress().getInt("progress", -2);
-                int max = info.getProgress().getInt("max", 1);
-                //Do something with progress variable
-                updateState(progress1, max);
-            }
+    private void updateState(int i, int l){
+        utils.LogD("i: "+i+"; l: "+l);
+        runOnUiThread(() -> {
+            progressBar.setMax(l);
+            progressBar.setProgress(i);
+            textView.setText(i + "/" + l);
         });
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        WorkManager.getInstance(getApplicationContext()).getWorkInfosForUniqueWorkLiveData("Render").removeObservers(this);
-        super.onPause();
-    }
-
-    private void updateState(int i, int l) {
-        progressBar.setMax(l);
-        progressBar.setProgress(i);
-        textView.setText(i + "/" + l);
     }
 
 
@@ -144,9 +164,18 @@ public class video_test extends AppCompatActivity {
                             ), 0
                     )
             );
-            VideoProj videoProj = new VideoProj(Collections.singletonList(part), new Rational(5, 1), this);
+            VideoProj videoProj = new VideoProj(Collections.singletonList(part), this);
+            videoProj.setFps(videoProj.getFpsOfFirstClip());
             utils.LogD(String.valueOf(videoProj.getLength()));
-            videoProj.preRender(videoProj::render);
+            videoProj.preRender(() -> {
+                videoProj.startRenderActivityAndRenderInTo();
+                runOnUiThread(() -> {
+                    Bitmap img=utils.readFromExternalStorage(this,"Test0");
+                    imageView.setImageBitmap(img);
+                    next.setVisibility(View.VISIBLE);
+                    before.setVisibility(View.VISIBLE);
+                });
+            }, (state, max, finished) -> updateState(state,max));
         }
     }
 }

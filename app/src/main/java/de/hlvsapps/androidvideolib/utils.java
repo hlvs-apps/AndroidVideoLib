@@ -62,7 +62,7 @@ public class utils {
         return VIDEO_FOLDER_NAME;
     }
 
-     static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
+     public static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
         File directory;
@@ -83,13 +83,13 @@ public class utils {
             LogE(e);
         }
     }
-     static boolean areAllTrue(boolean... array)
+    public static boolean areAllTrue(boolean... array)
     {
         for(boolean b : array) if(!b) return false;
         return true;
     }
 
-     static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
+    public static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
          ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -103,14 +103,14 @@ public class utils {
         File f=new File(directory, name);
         if(f.exists()) {
             Bitmap d=BitmapFactory.decodeFile(f.getPath());
-            LogD(String.valueOf(f.delete()));
+            if(name.contains(Renderer.startOfFileName)) LogD(String.valueOf(f.delete()));
             return d;
         }else{
             return null;
         }
     }
 
-     static Bitmap readFromExternalStorage(Context c, String name){
+    public static Bitmap readFromExternalStorage(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -199,7 +199,10 @@ public class utils {
     public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;
-        String name= stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        String name="no label";
+        if(applicationInfo.nonLocalizedLabel!=null) {
+            name = stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        }
         return name.replaceAll(" ", "");
     }
 

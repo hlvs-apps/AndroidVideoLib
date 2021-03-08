@@ -29,8 +29,7 @@ import androidx.appcompat.app.AlertDialog;
 import java.util.List;
 
 public class activity_utils {
-    //Konstanten von https://stackoverflow.com/questions/48166206/how-to-start-power-manager-of-all-android-manufactures-to-enable-background-and
-    //Code teils von https://stackoverflow.com/questions/48349889/huawei-kill-a-background-app-when-the-phone-is-locked
+    //Constants from https://stackoverflow.com/questions/48166206/how-to-start-power-manager-of-all-android-manufactures-to-enable-background-and
     public static final Intent[] POWERMANAGER_INTENTS = {
             new Intent().setComponent(new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
             new Intent().setComponent(new ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.AutobootManageActivity")),

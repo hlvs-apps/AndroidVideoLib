@@ -100,24 +100,19 @@ public class PreRenderer extends Worker {
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
                                     }
+                                    Bitmap bitmap = AndroidUtil.toBitmap(picture);
                                     if(ii==0){
                                         proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     if (proj.getPic0() == null) {
-                                        if(picture!=null)proj.setPic0(Picture.copyPicture(picture));
+                                        proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     utils.LogI("Save Image");
-                                    Bitmap bitmap = AndroidUtil.toBitmap(picture);
                                     utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
                                     utils.LogD(name + ii);
                                     final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
                                     proj.setNotificationProgress(length * 10000, value, false);
                                     if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
-                                    //setProgressAsync(new Data.Builder()
-                                    //        .putInt("progress", value)
-//                                            .putInt("max", length * 100)
-//                                            .build());
-
                                     ii++;
                                 }
                             } catch (IOException | JCodecException e) {

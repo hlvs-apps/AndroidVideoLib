@@ -21,5 +21,7 @@
         android:theme="@style/Base.Theme.AppCompat">
         <activity android:name="de.hlvsapps.test.video_test">
         </activity>
+        <activity android:name="de.hlvsapps.test.StartActivityForResult">
+        </activity>
     </application>
 </manifest>

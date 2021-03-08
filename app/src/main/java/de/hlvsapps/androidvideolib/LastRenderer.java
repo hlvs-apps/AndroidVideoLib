@@ -65,9 +65,14 @@ public class LastRenderer extends Worker {
     
     private List<String> getRealList(){
         List<String> result=new ArrayList<>();
+        int i=0;
         for(List<String> a:proj.inputs_from_last_render){
             for(String s:a){
-                if(s!=null)result.add(s);
+                if(s!=null) {
+                    utils.LogD("List: Item "+i+" value is: "+s);
+                    i++;
+                    result.add(s);
+                }
             }
         }
         return result;
