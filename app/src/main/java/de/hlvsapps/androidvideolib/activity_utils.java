@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -29,8 +31,7 @@ import androidx.appcompat.app.AlertDialog;
 import java.util.List;
 
 public class activity_utils {
-    //Konstanten von https://stackoverflow.com/questions/48166206/how-to-start-power-manager-of-all-android-manufactures-to-enable-background-and
-    //Code teils von https://stackoverflow.com/questions/48349889/huawei-kill-a-background-app-when-the-phone-is-locked
+    //Constants from https://stackoverflow.com/questions/48166206/how-to-start-power-manager-of-all-android-manufactures-to-enable-background-and
     public static final Intent[] POWERMANAGER_INTENTS = {
             new Intent().setComponent(new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")),
             new Intent().setComponent(new ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.AutobootManageActivity")),

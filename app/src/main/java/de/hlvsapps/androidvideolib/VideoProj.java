@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -42,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -105,9 +108,39 @@ public class VideoProj implements Serializable {
 
     private Rational fps=null;
 
+    private BigDecimal scaleFactor=BigDecimal.valueOf(1);
+
     private boolean[] which_task_finished;
 
     private RendererTimeLine rendererTimeLine;
+
+    Picture getPic0() {
+        utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
+        return pic0;
+    }
+
+    void setPic0(Picture pic0) {
+        this.pic0 = pic0;
+        utils.LogD("New Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
+    }
+
+    /**
+     * Sets the Scale Factor for preRendering.
+     * Default 1.
+     *
+     * @param scaleFactor The scale Factor
+     */
+    public void setScaleFactor(BigDecimal scaleFactor) {
+        this.scaleFactor = scaleFactor;
+    }
+
+    /**
+     * Gets the Scale Factor for preRendering
+     * @return the Scale Factor for preRendering
+     */
+    public BigDecimal getScaleFactor() {
+        return scaleFactor;
+    }
 
     Picture getPic0() {
         utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));

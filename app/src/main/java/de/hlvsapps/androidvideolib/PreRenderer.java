@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -30,7 +32,9 @@ import androidx.work.WorkerParameters;
 
 import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
+import org.jcodec.api.PictureWithMetadata;
 import org.jcodec.common.AndroidUtil;
+import org.jcodec.common.DemuxerTrackMeta;
 import org.jcodec.common.io.FileChannelWrapper;
 import org.jcodec.common.model.ColorSpace;
 import org.jcodec.common.model.Picture;
@@ -40,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
@@ -84,6 +89,8 @@ public class PreRenderer extends Worker {
             ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
             int j=0;
             Yuv420pToRgb ytb = new Yuv420pToRgb();
+            BigDecimal scaleFactor=proj.getScaleFactor();
+            boolean doScale=scaleFactor.compareTo(new BigDecimal(1))!=0;
             for (UriIdentifierPair i : workList) {
                 String name = i.getUriIdentifier().getIdentifier();
                 int video_length=i.getLengthInFrames();
@@ -92,32 +99,50 @@ public class PreRenderer extends Worker {
                         try (FileChannel c = t.getChannel()) {
                             try (FileChannelWrapper ch = new FileChannelWrapper(c)) {
                                 FrameGrab grab = FrameGrab.createFrameGrab(ch);
+                                grab.getNativeFrameWithMetadata();
                                 int ii = 0;
-                                Picture picture;
-                                while (null != (picture = grab.getNativeFrame())) {
+                                PictureWithMetadata pic;
+                                while (null != (pic = grab.getNativeFrameWithMetadata())) {
+                                    Picture picture=pic.getPicture();
                                     if (picture.getColor() == ColorSpace.YUV420) {
                                         Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
                                     }
+                                    int angel;
+                                    DemuxerTrackMeta.Orientation orientation = pic.getOrientation();
+                                    switch (orientation) {
+                                        case D_90:
+                                            angel = -90;
+                                            break;
+                                        case D_180:
+                                            angel = -180;
+                                            break;
+                                        case D_270:
+                                            angel = -270;
+                                            break;
+                                        default:
+                                            angel = 0;
+                                            break;
+                                    }
+                                    Bitmap bitmap = (angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture);
+                                    if(doScale) {
+                                        int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
+                                        int newWidth =  scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
+                                        bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+                                    }
                                     if(ii==0){
                                         proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     if (proj.getPic0() == null) {
-                                        if(picture!=null)proj.setPic0(Picture.copyPicture(picture));
+                                        proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     utils.LogI("Save Image");
-                                    Bitmap bitmap = AndroidUtil.toBitmap(picture);
                                     utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
                                     utils.LogD(name + ii);
                                     final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
                                     proj.setNotificationProgress(length * 10000, value, false);
                                     if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
-                                    //setProgressAsync(new Data.Builder()
-                                    //        .putInt("progress", value)
-//                                            .putInt("max", length * 100)
-//                                            .build());
-
                                     ii++;
                                 }
                             } catch (IOException | JCodecException e) {

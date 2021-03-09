@@ -1,6 +1,6 @@
 #!/bin/sh
 
-git filter-branch --env-filter '
+git filter-branch -f --env-filter '
 OLD_EMAIL="4505744+hlvs-apps@users.noreply.github.com"
 CORRECT_NAME="hlvs-apps"
 CORRECT_EMAIL="74505744+hlvs-apps@users.noreply.github.com"

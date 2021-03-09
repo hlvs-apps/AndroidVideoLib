@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -

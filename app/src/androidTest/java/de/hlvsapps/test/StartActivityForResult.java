@@ -17,8 +17,51 @@
  - limitations under the License.                                             -
  -----------------------------------------------------------------------------*/
 
-package de.hlvsapps.androidvideolib;
+package de.hlvsapps.test;
 
-public enum INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START {
-    sendRenderInstantiateProgressForRendering,startRecording,sendRecordedBroadcastAndStopRecording,close
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import de.hlvsapps.androidvideolib.R;
+
+public class StartActivityForResult extends AppCompatActivity {
+    private boolean success =false;
+    private boolean activityResultIsReturned = false;
+
+    boolean getSuccess(){
+        return success;
+    }
+
+    boolean getActivityResultIsReturned(){
+        return activityResultIsReturned;
+    }
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
+        this.startButton = (Button) this.findViewById(R.id.start_button);
+        this.startButton.setOnClickListener(onStart);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        success=resultCode==RESULT_OK;
+        activityResultIsReturned = true;
+    }
+
+    private View.OnClickListener onStart = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(StartActivityForResult.this, video_test.class);
+
+            StartActivityForResult.this.startActivityForResult(intent, 123);
+        }
+    };
+    private Button startButton = null;
 }

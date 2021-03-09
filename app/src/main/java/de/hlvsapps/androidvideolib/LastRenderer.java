@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -65,9 +67,14 @@ public class LastRenderer extends Worker {
     
     private List<String> getRealList(){
         List<String> result=new ArrayList<>();
+        int i=0;
         for(List<String> a:proj.inputs_from_last_render){
             for(String s:a){
-                if(s!=null)result.add(s);
+                if(s!=null) {
+                    utils.LogD("List: Item "+i+" value is: "+s);
+                    i++;
+                    result.add(s);
+                }
             }
         }
         return result;
@@ -88,8 +95,8 @@ public class LastRenderer extends Worker {
             d= (ParcelFileDescriptor) re.get(1);
             ch = new FileChannelWrapper(stream1.getChannel());
             enc = SequenceEncoder.createWithFps(ch, proj.getFps());
-            String[] reallist=  getRealList().toArray(new String[0]);
-            int length=reallist.length;
+            List<String> reallist=  getRealList();
+            int length=reallist.size();
             int i=0;
             utils.LogD("get Color");
             ColorSpace pic0=proj.getPic0().getColor();

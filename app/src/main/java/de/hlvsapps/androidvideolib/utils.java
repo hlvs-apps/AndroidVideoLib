@@ -1,7 +1,9 @@
 /*-----------------------------------------------------------------------------
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
- - Copyright 2021 the authors of AndroidVideoLib                              -
+ -                                                                            -
+ - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
  - You may obtain a copy of the License at                                    -
@@ -24,6 +26,7 @@ import android.content.ContextWrapper;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -62,7 +65,7 @@ public class utils {
         return VIDEO_FOLDER_NAME;
     }
 
-     static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
+     public static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
         // path to /data/data/yourapp/app_data/imageDir
         File directory;
@@ -83,36 +86,13 @@ public class utils {
             LogE(e);
         }
     }
-
-     static boolean areAllTrue(boolean... array)
+    public static boolean areAllTrue(boolean... array)
     {
         for(boolean b : array) if(!b) return false;
         return true;
     }
 
-     static void saveToExternalExportStorage(Bitmap bitmapImage, Context c, String name){
-         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
-         // path to /data/data/yourapp/app_data/imageDir
-         File directory;
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-             directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
-             if(!directory.exists()){
-                 directory.mkdirs();
-             }
-         }else{
-             directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
-         }
-        // Create imageDir
-        File mypath=new File(directory,name);
-        try (FileOutputStream fos= new FileOutputStream(mypath)){
-            // Use the compress method on the BitMap object to write image to the OutputStream
-            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
-        } catch (Exception e) {
-            LogE(e);
-        }
-    }
-
-     static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
+    public static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
          ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -126,14 +106,14 @@ public class utils {
         File f=new File(directory, name);
         if(f.exists()) {
             Bitmap d=BitmapFactory.decodeFile(f.getPath());
-            LogD(String.valueOf(f.delete()));
+            if(name.contains(Renderer.startOfFileName)) LogD(String.valueOf(f.delete()));
             return d;
         }else{
             return null;
         }
     }
 
-     static Bitmap readFromExternalStorage(Context c, String name){
+    public static Bitmap readFromExternalStorage(Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -182,6 +162,13 @@ public class utils {
         return length;
     }
 
+    public static Bitmap RotateBitmap(Bitmap source, float angle)
+    {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    }
+
 
     static List<Object> fileOutputStreamFromName(Context c, String name) throws FileNotFoundException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -222,7 +209,10 @@ public class utils {
     public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         int stringId = applicationInfo.labelRes;
-        String name= stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        String name="no label";
+        if(applicationInfo.nonLocalizedLabel!=null) {
+            name = stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
+        }
         return name.replaceAll(" ", "");
     }
 
