@@ -44,8 +44,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static android.content.Context.POWER_SERVICE;
@@ -76,7 +79,27 @@ public class PreRenderer extends Worker {
         }
     }
 
-    private synchronized ListenableWorker.Result preRender() {
+    private int sortImagesAndSave(ArrayList<SortedPicture> pics,int ii,boolean doScale,BigDecimal scaleFactor,String name,int length,int video_length,int j){
+        Collections.sort(pics);
+        for(SortedPicture realPic:pics){
+            Bitmap bitmap=realPic.getBitmap();
+            if(doScale) {
+                int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
+                int newWidth =  scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
+                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+            }
+            utils.LogI("Save Image");
+            utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
+            utils.LogD(name + ii);
+            final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
+            proj.setNotificationProgress(length * 10000, value, false);
+            if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
+            ii++;
+        }
+        return ii;
+    }
+
+    private synchronized Result preRender() {
         //Enable Wakelook
         PowerManager powerManager = (PowerManager) proj.getContext().getSystemService(POWER_SERVICE);
         proj.setWakeLock( powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
@@ -99,37 +122,19 @@ public class PreRenderer extends Worker {
                         try (FileChannel c = t.getChannel()) {
                             try (FileChannelWrapper ch = new FileChannelWrapper(c)) {
                                 FrameGrab grab = FrameGrab.createFrameGrab(ch);
-                                grab.getNativeFrameWithMetadata();
                                 int ii = 0;
-                                PictureWithMetadata pic;
-                                while (null != (pic = grab.getNativeFrameWithMetadata())) {
-                                    Picture picture=pic.getPicture();
+                                ArrayList<SortedPicture> pics=null;
+                                SortedPicture pp=null;
+                                PictureWithMetadata pwmd=null;
+                                for (int iji = 0; iji < video_length; iji++) {
+                                    if(pics==null)pics=new ArrayList<>();
+                                    PictureWithMetadata pic=grab.getNativeFrameWithMetadata();
+                                    utils.LogI(String.valueOf(pic.getTimestamp()));
+                                    Picture picture = pic.getPicture();
                                     if (picture.getColor() == ColorSpace.YUV420) {
                                         Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
-                                    }
-                                    int angel;
-                                    DemuxerTrackMeta.Orientation orientation = pic.getOrientation();
-                                    switch (orientation) {
-                                        case D_90:
-                                            angel = -90;
-                                            break;
-                                        case D_180:
-                                            angel = -180;
-                                            break;
-                                        case D_270:
-                                            angel = -270;
-                                            break;
-                                        default:
-                                            angel = 0;
-                                            break;
-                                    }
-                                    Bitmap bitmap = (angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture);
-                                    if(doScale) {
-                                        int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
-                                        int newWidth =  scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
-                                        bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
                                     }
                                     if(ii==0){
                                         proj.setPic0(Picture.copyPicture(picture));
@@ -137,14 +142,31 @@ public class PreRenderer extends Worker {
                                     if (proj.getPic0() == null) {
                                         proj.setPic0(Picture.copyPicture(picture));
                                     }
-                                    utils.LogI("Save Image");
-                                    utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
-                                    utils.LogD(name + ii);
-                                    final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
-                                    proj.setNotificationProgress(length * 10000, value, false);
-                                    if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
-                                    ii++;
+                                    int angel;
+                                    DemuxerTrackMeta.Orientation orientation = pic.getOrientation();
+                                    switch (orientation) {
+                                        case D_90:
+                                            angel = 90;
+                                            break;
+                                        case D_180:
+                                            angel = 180;
+                                            break;
+                                        case D_270:
+                                            angel = 270;
+                                            break;
+                                        default:
+                                            angel = 0;
+                                            break;
+                                    }
+                                    pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture)));
+                                    //See https://github.com/jcodec/jcodec/issues/165
+                                    //TODO add Detection Algorithm
+                                    if(iji!=0 && iji%3==0){
+                                        ii=sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j);
+                                        pics=null;
+                                    }
                                 }
+                                if(pics!=null)sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j);
                             } catch (IOException | JCodecException e) {
                                 utils.LogE(e);
                             }
@@ -174,7 +196,7 @@ public class PreRenderer extends Worker {
         proj=null;
         whatDoAfter=null;
         progressPreRender=null;
-        return ListenableWorker.Result.success();
+        return Result.success();
     }
 
 }

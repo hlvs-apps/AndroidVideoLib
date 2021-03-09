@@ -19,17 +19,31 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
-import java.util.Comparator;
+import android.graphics.Bitmap;
 
-/**
- * Compares {@link UriIdentifierPair}s
- */
-public class UriIdentifierPairComparator implements Comparator<UriIdentifierPair>, Serializable {
-    private static final long serialVersionUID = 47L;
-    @Override
-    public int compare(UriIdentifierPair o1, UriIdentifierPair o2) {
-        return o1.getFrameStartInProject()-o2.getFrameStartInProject();
+import org.jcodec.api.PictureWithMetadata;
+import org.jcodec.common.model.Picture;
+
+public class SortedPicture implements Comparable<SortedPicture> {
+    private final double timestamp;
+    private final Bitmap bitmap;
+
+    public double getTimestamp() {
+        return timestamp;
     }
-}
 
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public SortedPicture(double timestamp, Bitmap bitmap) {
+        this.bitmap = bitmap;
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public int compareTo(SortedPicture o2) {
+        return (int) ((timestamp-o2.getTimestamp())*100000D);
+    }
+
+}

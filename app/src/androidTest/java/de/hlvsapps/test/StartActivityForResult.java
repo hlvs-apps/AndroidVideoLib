@@ -29,6 +29,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import de.hlvsapps.androidvideolib.R;
 
+import static android.app.Activity.RESULT_OK;
+
 public class StartActivityForResult extends AppCompatActivity {
     private boolean success =false;
     private boolean activityResultIsReturned = false;
@@ -45,7 +47,7 @@ public class StartActivityForResult extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        this.startButton = (Button) this.findViewById(R.id.start_button);
+        this.startButton = this.findViewById(R.id.start_button);
         this.startButton.setOnClickListener(onStart);
     }
 

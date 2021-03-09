@@ -30,7 +30,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class ExampleUnitTest {
     @Test
-    public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+    public void reflectionTest() {
+        Integer d= new Integer(1);
+        System.out.println(d);
+        Integer d2= d;
+        System.out.println(d2);
+        d=new Integer(5);
+        System.out.println(d2);
+
+        assertEquals(new Integer(1), d2);
     }
 }

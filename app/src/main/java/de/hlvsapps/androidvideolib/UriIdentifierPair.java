@@ -25,7 +25,7 @@ import java.io.Serializable;
  * Contains {@link UriIdentifier}, with Computed Length, set by {@link RendererTimeLine}
  * You don't need to use this, instead use {@link UriIdentifier}
  */
-public class UriIdentifierPair implements Serializable {
+public class UriIdentifierPair implements Comparable<UriIdentifierPair>,Serializable {
     private static final long serialVersionUID = 48L;
     private final UriIdentifier uriIdentifier;
     private final Integer frameStartInProject;
@@ -58,6 +58,10 @@ public class UriIdentifierPair implements Serializable {
         return frameStartInProject;
     }
 
+    @Override
+    public int compareTo (UriIdentifierPair o2) {
+        return frameStartInProject-o2.getFrameStartInProject();
+    }
 
     public UriIdentifier getUriIdentifier() {
         return uriIdentifier;

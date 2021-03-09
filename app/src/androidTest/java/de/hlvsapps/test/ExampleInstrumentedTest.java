@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import de.hlvsapps.androidvideolib.R;
 import de.hlvsapps.androidvideolib.utils;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Instrumented test, which will execute on an Android device.
  *
@@ -41,6 +43,18 @@ import de.hlvsapps.androidvideolib.utils;
  */
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
+
+    @Test
+    public void reflectionTest() {
+        Integer d= new Integer(1);
+        System.out.println(d);
+        Integer d2= d;
+        System.out.println(d2);
+        d=new Integer(5);
+        System.out.println(d2);
+
+        assertEquals(new Integer(1), d2);
+    }
     @Test
     public void useAppContext() throws InterruptedException {
         // Context of the app under test.
@@ -61,7 +75,7 @@ public class ExampleInstrumentedTest {
         Assert.assertFalse(myActivity.getActivityResultIsReturned());
         Assert.assertFalse(myActivity.getSuccess());
 
-        Button startButton = (Button) myActivity.findViewById(R.id.start_button);
+        Button startButton = myActivity.findViewById(R.id.start_button);
 
         // Simulate a button click that start ChildActivity for result:
         myActivity.runOnUiThread(new Runnable() {

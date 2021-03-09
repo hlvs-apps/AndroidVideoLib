@@ -37,7 +37,7 @@ public class RendererTimeLine implements Serializable {
     }
 
     private void sortIdentifierPairsByTime(){
-        Collections.sort(uriIdentifierPairs,new UriIdentifierPairComparator());
+        Collections.sort(uriIdentifierPairs);
     }
 
     public List<UriIdentifier> getAllUrisFromUriIdentifiers(){

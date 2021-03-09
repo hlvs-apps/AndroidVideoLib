@@ -114,16 +114,6 @@ public class VideoProj implements Serializable {
 
     private RendererTimeLine rendererTimeLine;
 
-    Picture getPic0() {
-        utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
-        return pic0;
-    }
-
-    void setPic0(Picture pic0) {
-        this.pic0 = pic0;
-        utils.LogD("New Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
-    }
-
     /**
      * Sets the Scale Factor for preRendering.
      * Default 1.
