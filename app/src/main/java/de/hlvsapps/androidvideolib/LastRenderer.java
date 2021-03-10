@@ -20,6 +20,7 @@
 package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
+import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 
@@ -116,16 +117,18 @@ public class LastRenderer extends Worker {
                 i++;
                 utils.LogD("Finished");
             }
-            proj.setNotificationProgress(1, 1, true);
-            if(progressRender!=null)progressRender.updateProgressOfSavingVideo(1,1,true);
             enc.finish();
             ch.close();
             stream1.close();
             if(d!=null)d.close();
-            proj.getWakeLock().release();
-            utils.LogD("Complete Finished");
-            progressRender=null;
-            proj=null;
+            new Handler().postDelayed(() -> {
+                proj.setNotificationProgress(1, 1, true);
+                if(progressRender!=null)progressRender.updateProgressOfSavingVideo(1,1,true);
+                proj.getWakeLock().release();
+                utils.LogD("Complete Finished");
+                progressRender=null;
+                proj=null;
+            },100);
             return Result.success();
         } catch (FileNotFoundException e) {
             utils.LogE(e);

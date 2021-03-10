@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -30,26 +31,28 @@ import static org.junit.Assert.assertEquals;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 public class ExampleUnitTest {
+    boolean b=false;
+    boolean b2=false;
     @Test
-    public void reflectionTest() {
-        Integer d= new Integer(1);
-        System.out.println(d);
-        Integer d2= d;
-        System.out.println(d2);
-        d=new Integer(5);
-        System.out.println(d2);
-
-        assertEquals(new Integer(1), d2);
-    }
-
-    @Test
-    public void sortedPictureTest(){
-        double valueBefore=0;
-        for (int i=0;i<100;i++) {
-            System.out.println(i);
-            SortedPicture picture = new SortedPicture(i, null, 1);
-            Assert.assertTrue(picture.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(valueBefore));
-            valueBefore=picture.getTimestampPlusDuration();
-        }
+    public void runnableTest() throws InterruptedException {
+        PreRenderer.ExecutorPool.Executor exe=new PreRenderer.ExecutorPool.Executor(() -> {
+            System.out.println("Ende");
+            System.out.println(b);
+            Assert.assertTrue(b);
+            b2=true;
+        });
+        exe.execute(() -> {
+                System.out.println(b);
+                int i;
+                for (i=0;i<=99;i++){
+                    System.out.println(i);
+                }
+                Assert.assertEquals(i,100);
+                b=true;
+                System.out.println(b);
+        });
+        Thread.sleep(5000);
+        System.out.println("The End");
+        assertTrue(b2);
     }
 }

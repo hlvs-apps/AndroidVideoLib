@@ -57,6 +57,8 @@ public class PreRenderer extends Worker {
     static VideoProj proj;
     static Runnable whatDoAfter=null;
 
+    private ExecutorPool pool;
+
     static ProgressPreRender progressPreRender=null;
 
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
@@ -78,30 +80,30 @@ public class PreRenderer extends Worker {
         }
     }
 
-    private Triple<Integer,ArrayList<SortedPicture>,Double> sortImagesAndSave(ArrayList<SortedPicture> pics, int ii, boolean doScale, BigDecimal scaleFactor, String name, int length, int video_length, int j, boolean isLast, double endBefore){
+    private void saveBitmap(Bitmap b, String fileName, boolean doScale,BigDecimal scaleFactor){
+        long timeBefore=System.currentTimeMillis();
+        pool.attachToExecutorOrExecuteWhenNoExecutorAvailable(() -> {
+            Bitmap bitmap=b;
+            if (doScale) {
+                int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
+                int newWidth = scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
+                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+            }
+            utils.saveToExternalStorage(bitmap, proj.getContext(), fileName);
+        });
+        utils.LogI("Required Time for Saving Image: "+(System.currentTimeMillis()-timeBefore)+" Millis");
+    }
+
+    private Triple<Integer,ArrayList<SortedPicture>,Double> sortImagesAndSave(ArrayList<SortedPicture> pics, int ii, boolean doScale, BigDecimal scaleFactor, String name, boolean isLast, double endBefore){
         Collections.sort(pics);
         ArrayList<SortedPicture> rest=null;
-        for(SortedPicture realPic:pics) {
-            utils.LogI(String.valueOf(realPic.getTimestamp()));
-            utils.LogI(String.valueOf(realPic.getDuration()));
-            utils.LogI(String.valueOf(realPic.getTimestampPlusDuration()));
-            utils.LogI(String.valueOf(endBefore));
+        for(final SortedPicture realPic:pics) {
             if (isLast || endBefore==0 || realPic.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(endBefore)) {
                 endBefore= realPic.getTimestampPlusDuration();
                 Bitmap bitmap = realPic.getBitmap();
-                if (doScale) {
-                    int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
-                    int newWidth = scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
-                    bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
-                }
-                utils.LogI("Save Image");
-                utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
-                utils.LogD(name + ii);
-                final int value = (int) (j * 10000 + ((ii * 1D) / video_length) * 10000);
-                proj.setNotificationProgress(length * 10000, value, false);
-                if (progressPreRender != null)
-                    progressPreRender.updateProgress(value, length * 10000, false);
+                final String fileName=name + ii;
                 ii++;
+                saveBitmap(bitmap,fileName,doScale,scaleFactor);
             }else{
                 if(rest==null)rest=new ArrayList<>();
                 rest.add(realPic);
@@ -115,6 +117,8 @@ public class PreRenderer extends Worker {
         PowerManager powerManager = (PowerManager) proj.getContext().getSystemService(POWER_SERVICE);
         proj.setWakeLock( powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
         proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
+
+        pool=new ExecutorPool(10);
 
         utils.LogI("PreRender");
         try {
@@ -171,15 +175,18 @@ public class PreRenderer extends Worker {
                                     }
                                     pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture),pic.getDuration()));
                                     //See https://github.com/jcodec/jcodec/issues/165
+                                    final int value = (int) (j * 10000 + ((ii * 1D) / video_length) * 10000);
+                                    proj.setNotificationProgress(length * 10000, value, false);
+                                    if (progressPreRender != null) progressPreRender.updateProgress(value, length * 10000, false);
                                     if(iji!=0 && iji%10==0){
                                         utils.LogD("Start Saving with "+iji);
-                                        Triple<Integer,ArrayList<SortedPicture>,Double> triple =sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j,false,before);
+                                        Triple<Integer,ArrayList<SortedPicture>,Double> triple =sortImagesAndSave(pics,ii,doScale,scaleFactor,name, false,before);
                                         ii= triple.first;
                                         pics= triple.second;
                                         before=triple.third;
                                     }
                                 }
-                                if(pics!=null)sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j,true,before);
+                                if(pics!=null)sortImagesAndSave(pics,ii,doScale,scaleFactor,name, true,before);
                             } catch (IOException | JCodecException e) {
                                 utils.LogE(e);
                             }
@@ -210,6 +217,60 @@ public class PreRenderer extends Worker {
         whatDoAfter=null;
         progressPreRender=null;
         return Result.success();
+    }
+
+    public static class ExecutorPool{
+        private final int num_of_executes;
+        private final Executor[] executorList;
+        private final boolean[] finished;
+        public ExecutorPool(int num_of_executors){
+            this.num_of_executes=num_of_executors;
+            executorList=new Executor[num_of_executors];
+            finished=new boolean[num_of_executors];
+            for(int i=0;i<num_of_executors;i++){
+                final int finalI = i;
+                finished[finalI]=true;
+                executorList[finalI]=new Executor(() -> finished[finalI]=false, () -> finished[finalI]=true);
+            }
+        }
+        public void attachToExecutorOrExecuteWhenNoExecutorAvailable(Runnable run){
+            boolean started=false;
+            for(int i=0;i<num_of_executes;i++){
+                if(finished[i]) {
+                    executorList[i].execute(run);
+                    started=true;
+                    break;
+                }
+            }
+            if(!started)run.run();
+        }
+        public static class Executor implements java.util.concurrent.Executor{
+            private final RunBeforeOrAfter runAfter;
+            private final RunBeforeOrAfter runBefore;
+            public Executor(RunBeforeOrAfter runBefore, RunBeforeOrAfter runAfter){
+                this.runAfter = runAfter;
+                this.runBefore=runBefore;
+            }
+            public Executor(RunBeforeOrAfter runAfter){
+                this(null,runAfter);
+            }
+            public Executor(){
+                this(null);
+            }
+            public interface RunBeforeOrAfter {
+                void run();
+            }
+            @Override
+            public void execute(Runnable runnable) {
+                new Thread(() -> {
+                    long timeBefore=System.currentTimeMillis();
+                    if(runBefore!=null) runBefore.run();
+                    runnable.run();
+                    if(runAfter !=null) runAfter.run();
+                    utils.LogI("Real Required Time for Operation: "+(System.currentTimeMillis()-timeBefore)+" Millis");
+                }).start();
+            }
+        }
     }
 
 }

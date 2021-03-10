@@ -86,10 +86,16 @@ public class utils {
             LogE(e);
         }
     }
-    public static boolean areAllTrue(boolean... array)
-    {
+    public static boolean areAllTrue(boolean... array) {
         for(boolean b : array) if(!b) return false;
         return true;
+    }
+
+    public static boolean isOneTrue(boolean... array){
+        for(boolean value: array){
+            if(value) return true;
+        }
+        return false;
     }
 
     public static Bitmap readFromExternalExportStorageAndDelete(Context c, String name){
