@@ -104,8 +104,13 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
                     if(intentInit!=null) LocalBroadcastManager.getInstance(context).sendBroadcast(intentInit);
                     break;
                 case sendRecordedBroadcastAndStopRecording:
-                    if(intentsSent!=null) for (Intent send : intentsSent)
-                        LocalBroadcastManager.getInstance(context).sendBroadcast(send);
+                    if(intentsSent!=null) for (Intent send : intentsSent) {
+                        try {
+                            LocalBroadcastManager.getInstance(context).sendBroadcast(send);
+                        }catch (Exception e){
+                            utils.LogE(e);
+                        }
+                    }
                     intentsSent=null;
                     record=false;
                     break;

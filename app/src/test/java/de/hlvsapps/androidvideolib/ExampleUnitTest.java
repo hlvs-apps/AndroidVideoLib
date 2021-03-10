@@ -19,6 +19,7 @@
 
 package de.hlvsapps.androidvideolib;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -39,5 +40,16 @@ public class ExampleUnitTest {
         System.out.println(d2);
 
         assertEquals(new Integer(1), d2);
+    }
+
+    @Test
+    public void sortedPictureTest(){
+        double valueBefore=0;
+        for (int i=0;i<100;i++) {
+            System.out.println(i);
+            SortedPicture picture = new SortedPicture(i, null, 1);
+            Assert.assertTrue(picture.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(valueBefore));
+            valueBefore=picture.getTimestampPlusDuration();
+        }
     }
 }

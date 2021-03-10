@@ -44,7 +44,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -79,24 +78,36 @@ public class PreRenderer extends Worker {
         }
     }
 
-    private int sortImagesAndSave(ArrayList<SortedPicture> pics,int ii,boolean doScale,BigDecimal scaleFactor,String name,int length,int video_length,int j){
+    private Triple<Integer,ArrayList<SortedPicture>,Double> sortImagesAndSave(ArrayList<SortedPicture> pics, int ii, boolean doScale, BigDecimal scaleFactor, String name, int length, int video_length, int j, boolean isLast, double endBefore){
         Collections.sort(pics);
-        for(SortedPicture realPic:pics){
-            Bitmap bitmap=realPic.getBitmap();
-            if(doScale) {
-                int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
-                int newWidth =  scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
-                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+        ArrayList<SortedPicture> rest=null;
+        for(SortedPicture realPic:pics) {
+            utils.LogI(String.valueOf(realPic.getTimestamp()));
+            utils.LogI(String.valueOf(realPic.getDuration()));
+            utils.LogI(String.valueOf(realPic.getTimestampPlusDuration()));
+            utils.LogI(String.valueOf(endBefore));
+            if (isLast || endBefore==0 || realPic.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(endBefore)) {
+                endBefore= realPic.getTimestampPlusDuration();
+                Bitmap bitmap = realPic.getBitmap();
+                if (doScale) {
+                    int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
+                    int newWidth = scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
+                    bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+                }
+                utils.LogI("Save Image");
+                utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
+                utils.LogD(name + ii);
+                final int value = (int) (j * 10000 + ((ii * 1D) / video_length) * 10000);
+                proj.setNotificationProgress(length * 10000, value, false);
+                if (progressPreRender != null)
+                    progressPreRender.updateProgress(value, length * 10000, false);
+                ii++;
+            }else{
+                if(rest==null)rest=new ArrayList<>();
+                rest.add(realPic);
             }
-            utils.LogI("Save Image");
-            utils.saveToExternalStorage(bitmap, proj.getContext(), name + ii);
-            utils.LogD(name + ii);
-            final int value = (int) (j * 10000 + ((ii* 1D) / video_length) * 10000);
-            proj.setNotificationProgress(length * 10000, value, false);
-            if(progressPreRender!=null)progressPreRender.updateProgress(value,length*10000,false);
-            ii++;
         }
-        return ii;
+        return Triple.createFinalTriple(ii,rest,endBefore);
     }
 
     private synchronized Result preRender() {
@@ -123,20 +134,20 @@ public class PreRenderer extends Worker {
                             try (FileChannelWrapper ch = new FileChannelWrapper(c)) {
                                 FrameGrab grab = FrameGrab.createFrameGrab(ch);
                                 int ii = 0;
+                                double before=0;
                                 ArrayList<SortedPicture> pics=null;
-                                SortedPicture pp=null;
-                                PictureWithMetadata pwmd=null;
                                 for (int iji = 0; iji < video_length; iji++) {
                                     if(pics==null)pics=new ArrayList<>();
                                     PictureWithMetadata pic=grab.getNativeFrameWithMetadata();
                                     utils.LogI(String.valueOf(pic.getTimestamp()));
+                                    utils.LogI(String.valueOf(pic.getDuration()));
                                     Picture picture = pic.getPicture();
                                     if (picture.getColor() == ColorSpace.YUV420) {
                                         Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
                                     }
-                                    if(ii==0){
+                                    if(iji==0){
                                         proj.setPic0(Picture.copyPicture(picture));
                                     }
                                     if (proj.getPic0() == null) {
@@ -158,15 +169,17 @@ public class PreRenderer extends Worker {
                                             angel = 0;
                                             break;
                                     }
-                                    pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture)));
+                                    pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture),pic.getDuration()));
                                     //See https://github.com/jcodec/jcodec/issues/165
-                                    //TODO add Detection Algorithm
-                                    if(iji!=0 && iji%3==0){
-                                        ii=sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j);
-                                        pics=null;
+                                    if(iji!=0 && iji%10==0){
+                                        utils.LogD("Start Saving with "+iji);
+                                        Triple<Integer,ArrayList<SortedPicture>,Double> triple =sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j,false,before);
+                                        ii= triple.first;
+                                        pics= triple.second;
+                                        before=triple.third;
                                     }
                                 }
-                                if(pics!=null)sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j);
+                                if(pics!=null)sortImagesAndSave(pics,ii,doScale,scaleFactor,name,length,video_length,j,true,before);
                             } catch (IOException | JCodecException e) {
                                 utils.LogE(e);
                             }

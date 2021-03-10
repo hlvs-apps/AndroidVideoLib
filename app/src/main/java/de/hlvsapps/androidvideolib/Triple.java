@@ -19,46 +19,18 @@
 
 package de.hlvsapps.androidvideolib;
 
-import android.graphics.Bitmap;
+public class Triple<F, S, T> {
+    public final F first;
+    public final S second;
+    public final T third;
 
-import org.jcodec.api.PictureWithMetadata;
-import org.jcodec.common.model.Picture;
-
-public class SortedPicture implements Comparable<SortedPicture> {
-    private final double timestamp;
-    private final Bitmap bitmap;
-    private final double duration;
-
-    public double getDuration() {
-        return duration;
+    private Triple(F first, S second, T third) {
+        this.first=first;
+        this.second=second;
+        this.third=third;
     }
 
-    public double getTimestamp() {
-        return timestamp;
+    public static <A, B, C> Triple<A, B, C> createFinalTriple(A a, B b, C c) {
+        return new Triple<>(a,b,c);
     }
-
-    public double getTimestampPlusDuration(){
-        return timestamp+duration;
-    }
-
-    public Bitmap getBitmap() {
-        return bitmap;
-    }
-
-    public SortedPicture(double timestamp, Bitmap bitmap, double duration) {
-        this.duration=duration;
-        this.bitmap = bitmap;
-        this.timestamp = timestamp;
-    }
-
-    public boolean doesTimeStampPlusDurationBeforeEqualThisTimeStamp(double valueBeforeThis){
-        final int diff= (int) ((valueBeforeThis-timestamp)*1000D);
-        return (1>=diff) && (diff >= -1);
-    }
-
-    @Override
-    public int compareTo(SortedPicture other) {
-        return (int) ((timestamp-other.getTimestamp())*100000D);
-    }
-
 }
