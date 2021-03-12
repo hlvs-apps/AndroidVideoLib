@@ -194,18 +194,18 @@ public class PreRenderer extends Worker {
                     }
 
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    utils.LogE(e);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    utils.LogE(e);
                 }
                 j++;
             }
         }catch (Exception e){
+            utils.LogE(e);
             proj.getWakeLock().release();
             proj.setNotificationProgress(1, 1, true);
             //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
             if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
-            e.printStackTrace();
             throw e;
         }
         proj.setNotificationProgress(1, 1, true);
