@@ -175,9 +175,11 @@ public class PreRenderer extends Worker {
                                     }
                                     pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture),pic.getDuration()));
                                     //See https://github.com/jcodec/jcodec/issues/165
-                                    final int value = (int) (j * 10000 + ((ii * 1D) / video_length) * 10000);
-                                    proj.setNotificationProgress(length * 10000, value, false);
-                                    if (progressPreRender != null) progressPreRender.updateProgress(value, length * 10000, false);
+                                    try {
+                                        proj.setNotificationProgress(length, iji, false);
+                                        if (progressPreRender != null)
+                                            progressPreRender.updateProgress(iji, length, false);
+                                    }catch (Exception ignored){}
                                     if(iji!=0 && iji%10==0){
                                         utils.LogD("Start Saving with "+iji);
                                         Triple<Integer,ArrayList<SortedPicture>,Double> triple =sortImagesAndSave(pics,ii,doScale,scaleFactor,name, false,before);
@@ -203,16 +205,18 @@ public class PreRenderer extends Worker {
         }catch (Exception e){
             utils.LogE(e);
             proj.getWakeLock().release();
-            proj.setNotificationProgress(1, 1, true);
-            //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-            if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
+            try {
+                proj.setNotificationProgress(1, 1, true);
+                //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
+                if (progressPreRender != null) progressPreRender.updateProgress(1, 1, true);
+            }catch (Exception ignored){}
             throw e;
         }
         proj.setNotificationProgress(1, 1, true);
         if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
         //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
         proj.getWakeLock().release();
-        if(whatDoAfter!=null)proj.getContext().runOnUiThread(whatDoAfter);
+        if(whatDoAfter!=null)whatDoAfter.run();
         proj=null;
         whatDoAfter=null;
         progressPreRender=null;
