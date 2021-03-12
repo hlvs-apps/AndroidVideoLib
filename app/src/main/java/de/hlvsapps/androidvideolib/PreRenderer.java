@@ -129,6 +129,10 @@ public class PreRenderer extends Worker {
             Yuv420pToRgb ytb = new Yuv420pToRgb();
             BigDecimal scaleFactor=proj.getScaleFactor();
             boolean doScale=scaleFactor.compareTo(new BigDecimal(1))!=0;
+            int complete_length=0,currentEndPos=0;
+            for(UriIdentifierPair i: workList){
+                complete_length += i.getLengthInFrames();
+            }
             for (UriIdentifierPair i : workList) {
                 String name = i.getUriIdentifier().getIdentifier();
                 int video_length=i.getLengthInFrames();
@@ -176,9 +180,9 @@ public class PreRenderer extends Worker {
                                     pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture),pic.getDuration()));
                                     //See https://github.com/jcodec/jcodec/issues/165
                                     try {
-                                        proj.setNotificationProgress(video_length, iji, false);
+                                        proj.setNotificationProgress(complete_length, iji+currentEndPos, false);
                                         if (progressPreRender != null)
-                                            progressPreRender.updateProgress(iji, video_length, false);
+                                            progressPreRender.updateProgress(iji+currentEndPos, complete_length, false);
                                     }catch (Exception ignored){}
                                     if(iji!=0 && iji%10==0){
                                         utils.LogD("Start Saving with "+iji);
@@ -200,6 +204,7 @@ public class PreRenderer extends Worker {
                 } catch (IOException e) {
                     utils.LogE(e);
                 }
+                currentEndPos += video_length;
                 j++;
             }
         }catch (Exception e){
