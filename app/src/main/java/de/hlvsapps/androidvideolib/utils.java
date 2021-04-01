@@ -49,6 +49,7 @@ import java.util.List;
 
 /**
  * Utils class of this AndroidVideoLib
+ * @author hlvs-apps
  */
 public class utils {
 
@@ -61,7 +62,7 @@ public class utils {
         VIDEO_FOLDER_NAME = videoFolderName;
     }
 
-     static String getVideoFolderName() {
+     public static String getVideoFolderName() {
         return VIDEO_FOLDER_NAME;
     }
 
@@ -103,12 +104,12 @@ public class utils {
          File directory;
          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
              directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
-             if(!directory.exists()){
-                 directory.mkdirs();
-             }
          }else{
              directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
          }
+        if(!directory.exists()){
+            directory.mkdirs();
+        }
         File f=new File(directory, name);
         if(f.exists()) {
             Bitmap d=BitmapFactory.decodeFile(f.getPath());
@@ -116,6 +117,53 @@ public class utils {
             return d;
         }else{
             return null;
+        }
+    }
+
+    /**
+     * Delete all Images saved to Apps External Storage starting with the name
+     * @param c Your Context
+     * @param name The name
+     */
+    public static void deleteAllVideoCacheContainingName(Context c,String name){
+        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+        File directory;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
+        }else{
+            directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
+        }
+        if(!directory.exists()){
+            directory.mkdirs();
+        }
+        File[] filesList=directory.listFiles((file, s) -> s.startsWith(name));
+        if(filesList==null)return;
+        for (File f:filesList){
+            if(f.delete())LogI("Deleted File "+f.getName());
+            else LogI("Could not delete File "+f.getName());
+        }
+    }
+
+    /**
+     * Delete all Files in VideoCache, for all Projects. In most cases it is better to use {@link utils#deleteAllVideoCacheContainingName(Context, String)}
+      * @param c Your context
+     */
+    public static void deleteAllVideoCache(Context c){
+        ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
+        File directory;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            directory=new File(cw.getNoBackupFilesDir(),"imageCacheDirVideoExport");
+        }else{
+            directory = cw.getDir("imageCacheDirVideoExport",Context.MODE_PRIVATE);
+        }
+        if(!directory.exists()){
+            directory.mkdirs();
+        }
+        File[] filesList=directory.listFiles();
+        if(filesList==null)return;
+        for (File f:filesList){
+            if(f.delete())LogI("Deleted File "+f.getName());
+            else LogI("Could not delete File "+f.getName());
         }
     }
 

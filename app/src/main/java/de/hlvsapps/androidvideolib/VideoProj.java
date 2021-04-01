@@ -325,6 +325,16 @@ public class VideoProj implements Serializable {
         return context;
     }
 
+    /**
+     * Delete all Cache for a {@link UriIdentifier}
+     * This Works by getting the UriIdentifiers Name and call {@link utils#deleteAllVideoCacheContainingName(Context, String)} with the UriIdentifiers identifier.
+     * @param uriIdentifier The UriIdentifier
+     * @see utils#deleteAllVideoCacheContainingName(Context, String)
+     */
+    public void deleteAllCacheForUriIdentifier(UriIdentifier uriIdentifier){
+        utils.deleteAllVideoCacheContainingName(context,uriIdentifier.getIdentifier());
+    }
+
 
     /**
      * Updates the {@link RendererTimeLine} of the Project.
