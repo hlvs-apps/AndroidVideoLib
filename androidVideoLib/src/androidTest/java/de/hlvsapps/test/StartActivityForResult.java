@@ -17,48 +17,51 @@
  - limitations under the License.                                             -
  -----------------------------------------------------------------------------*/
 
-package de.hlvsapps.androidvideolib;
+package de.hlvsapps.test;
 
-import android.graphics.Bitmap;
 
-import org.jcodec.api.PictureWithMetadata;
-import org.jcodec.common.model.Picture;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
-public class SortedPicture implements Comparable<SortedPicture> {
-    private final double timestamp;
-    private final Bitmap bitmap;
-    private final double duration;
+import androidx.appcompat.app.AppCompatActivity;
 
-    public double getDuration() {
-        return duration;
+import de.hlvsapps.androidvideolib.R;
+
+public class StartActivityForResult extends AppCompatActivity {
+    private boolean success =false;
+    private boolean activityResultIsReturned = false;
+
+    boolean getSuccess(){
+        return success;
     }
 
-    public double getTimestamp() {
-        return timestamp;
+    boolean getActivityResultIsReturned(){
+        return activityResultIsReturned;
     }
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
 
-    public double getTimestampPlusDuration(){
-        return timestamp+duration;
-    }
-
-    public Bitmap getBitmap() {
-        return bitmap;
-    }
-
-    public SortedPicture(double timestamp, Bitmap bitmap, double duration) {
-        this.duration=duration;
-        this.bitmap = bitmap;
-        this.timestamp = timestamp;
-    }
-
-    public boolean doesTimeStampPlusDurationBeforeEqualThisTimeStamp(double valueBeforeThis){
-        final int diff= (int) ((valueBeforeThis-timestamp)*1000D);
-        return (1>=diff) && (diff >= -1);
+        this.startButton = this.findViewById(R.id.start_button);
+        this.startButton.setOnClickListener(onStart);
     }
 
     @Override
-    public int compareTo(SortedPicture other) {
-        return (int) ((timestamp-other.getTimestamp())*100000D);
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        success=resultCode==RESULT_OK;
+        activityResultIsReturned = true;
     }
 
+    private View.OnClickListener onStart = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(StartActivityForResult.this, video_test.class);
+
+            StartActivityForResult.this.startActivityForResult(intent, 123);
+        }
+    };
+    private Button startButton = null;
 }
