@@ -19,7 +19,9 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +31,7 @@ import java.util.List;
  *
  * @author hlvs-apps
  */
-public class VideoPart implements Serializable {
-    private static final long serialVersionUID = 45L;
+public class VideoPart implements Parcelable {
     private final List<RenderTaskWrapper> renderTaskWrappers;
     private final List<VideoSegmentWithTime> segments;
     private int frameStartInProject;
@@ -89,4 +90,54 @@ public class VideoPart implements Serializable {
     public int getFrameStartInProject() {
         return frameStartInProject;
     }
+
+    protected VideoPart(Parcel in) {
+        if (in.readByte() == 0x01) {
+            renderTaskWrappers = new ArrayList<RenderTaskWrapper>();
+            in.readList(renderTaskWrappers, RenderTaskWrapper.class.getClassLoader());
+        } else {
+            renderTaskWrappers = null;
+        }
+        if (in.readByte() == 0x01) {
+            segments = new ArrayList<VideoSegmentWithTime>();
+            in.readList(segments, VideoSegmentWithTime.class.getClassLoader());
+        } else {
+            segments = null;
+        }
+        frameStartInProject = in.readInt();
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (renderTaskWrappers == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(renderTaskWrappers);
+        }
+        if (segments == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(segments);
+        }
+        dest.writeInt(frameStartInProject);
+    }
+
+    public static final Parcelable.Creator<VideoPart> CREATOR = new Parcelable.Creator<VideoPart>() {
+        @Override
+        public VideoPart createFromParcel(Parcel in) {
+            return new VideoPart(in);
+        }
+
+        @Override
+        public VideoPart[] newArray(int size) {
+            return new VideoPart[size];
+        }
+    };
 }

@@ -19,7 +19,9 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,8 +30,7 @@ import java.util.List;
  * A VideoSegment is a Container for {@link UriIdentifier}.
  * @author hlvs-apps
  */
-public class VideoSegment implements Serializable {
-    private static final long serialVersionUID = 43L;
+public class VideoSegment implements Parcelable {
     private List<UriIdentifier> uriIdentifiers;
 
     /**
@@ -66,4 +67,40 @@ public class VideoSegment implements Serializable {
             addUriIdentifier(i);
         }
     }
+
+    protected VideoSegment(Parcel in) {
+        if (in.readByte() == 0x01) {
+            uriIdentifiers = new ArrayList<UriIdentifier>();
+            in.readList(uriIdentifiers, UriIdentifier.class.getClassLoader());
+        } else {
+            uriIdentifiers = null;
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (uriIdentifiers == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(uriIdentifiers);
+        }
+    }
+
+    public static final Parcelable.Creator<VideoSegment> CREATOR = new Parcelable.Creator<VideoSegment>() {
+        @Override
+        public VideoSegment createFromParcel(Parcel in) {
+            return new VideoSegment(in);
+        }
+
+        @Override
+        public VideoSegment[] newArray(int size) {
+            return new VideoSegment[size];
+        }
+    };
 }

@@ -19,10 +19,14 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-public class RenderTaskWrapper implements Serializable {
-    private static final long serialVersionUID = 51L;
+/**
+ * Used for Rendering. Contains a {@link RenderTask} and time Information.
+ * @author hlvs-apps
+ */
+public class RenderTaskWrapper implements Parcelable {
     private final RenderTask renderTask;
     private final int frameInPartFrom;
     private final int frameInPartTo;
@@ -70,4 +74,38 @@ public class RenderTaskWrapper implements Serializable {
     public int getFrameInPartTo() {
         return frameInPartTo;
     }
+
+    protected RenderTaskWrapper(Parcel in) {
+        renderTask = (RenderTask) in.readValue(RenderTask.class.getClassLoader());
+        frameInPartFrom = in.readInt();
+        frameInPartTo = in.readInt();
+        frameInProjectFrom = in.readInt();
+        frameInProjectTo = in.readInt();
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(renderTask);
+        dest.writeInt(frameInPartFrom);
+        dest.writeInt(frameInPartTo);
+        dest.writeInt(frameInProjectFrom);
+        dest.writeInt(frameInProjectTo);
+    }
+
+    public static final Parcelable.Creator<RenderTaskWrapper> CREATOR = new Parcelable.Creator<RenderTaskWrapper>() {
+        @Override
+        public RenderTaskWrapper createFromParcel(Parcel in) {
+            return new RenderTaskWrapper(in);
+        }
+
+        @Override
+        public RenderTaskWrapper[] newArray(int size) {
+            return new RenderTaskWrapper[size];
+        }
+    };
 }

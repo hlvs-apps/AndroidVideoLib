@@ -19,7 +19,10 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,9 +30,9 @@ import java.util.List;
  *
  * @author hlvs-apps
  */
-public class VideoSegmentWithTime extends VideoSegment implements Serializable {
-    private static final long serialVersionUID = 44L;
+public class VideoSegmentWithTime extends VideoSegment implements Parcelable {
     private final int startTimeInPart;
+    private final List<UriIdentifier> parts;
 
     /**
      * @param parts {@link UriIdentifier}s to be contained in this VideoSegment
@@ -38,6 +41,7 @@ public class VideoSegmentWithTime extends VideoSegment implements Serializable {
      */
     public VideoSegmentWithTime(List<UriIdentifier> parts,int startTimeInPart) {
         super(parts);
+        this.parts=parts;
         this.startTimeInPart=startTimeInPart;
     }
 
@@ -58,4 +62,47 @@ public class VideoSegmentWithTime extends VideoSegment implements Serializable {
     public int getStartTimeInPart() {
         return startTimeInPart;
     }
+
+    protected VideoSegmentWithTime(Parcel in) {
+        this(readParts(in),in.readInt());
+    }
+
+    private static List<UriIdentifier> readParts(Parcel in){
+        ArrayList<UriIdentifier> parts;
+        if (in.readByte() == 0x01) {
+            parts = new ArrayList<UriIdentifier>();
+            in.readList(parts, UriIdentifier.class.getClassLoader());
+        } else {
+            parts = null;
+        }
+        return parts;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (parts == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(parts);
+        }
+        dest.writeInt(startTimeInPart);
+    }
+
+    public static final Parcelable.Creator<VideoSegmentWithTime> CREATOR = new Parcelable.Creator<VideoSegmentWithTime>() {
+        @Override
+        public VideoSegmentWithTime createFromParcel(Parcel in) {
+            return new VideoSegmentWithTime(in);
+        }
+
+        @Override
+        public VideoSegmentWithTime[] newArray(int size) {
+            return new VideoSegmentWithTime[size];
+        }
+    };
 }

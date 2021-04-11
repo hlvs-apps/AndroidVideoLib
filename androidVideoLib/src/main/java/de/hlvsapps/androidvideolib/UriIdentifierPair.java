@@ -19,14 +19,14 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * Contains {@link UriIdentifier}, with Computed Length, set by {@link RendererTimeLine}
  * You don't need to use this, instead use {@link UriIdentifier}
  */
-public class UriIdentifierPair implements Comparable<UriIdentifierPair>,Serializable {
-    private static final long serialVersionUID = 48L;
+public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcelable {
     private final UriIdentifier uriIdentifier;
     private final Integer frameStartInProject;
     private int lengthInFrames;
@@ -66,4 +66,42 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>,Serializ
     public UriIdentifier getUriIdentifier() {
         return uriIdentifier;
     }
+
+    protected UriIdentifierPair(Parcel in) {
+        uriIdentifier = (UriIdentifier) in.readValue(UriIdentifier.class.getClassLoader());
+        frameStartInProject = in.readByte() == 0x00 ? null : in.readInt();
+        lengthInFrames = in.readInt();
+        lengthInSeconds = in.readDouble();
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(uriIdentifier);
+        if (frameStartInProject == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeInt(frameStartInProject);
+        }
+        dest.writeInt(lengthInFrames);
+        dest.writeDouble(lengthInSeconds);
+    }
+
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<UriIdentifierPair> CREATOR = new Parcelable.Creator<UriIdentifierPair>() {
+        @Override
+        public UriIdentifierPair createFromParcel(Parcel in) {
+            return new UriIdentifierPair(in);
+        }
+
+        @Override
+        public UriIdentifierPair[] newArray(int size) {
+            return new UriIdentifierPair[size];
+        }
+    };
 }

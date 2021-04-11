@@ -19,13 +19,19 @@
 
 package de.hlvsapps.androidvideolib;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class RendererTimeLine implements Serializable {
-    private static final long serialVersionUID = 52L;
+/**
+ * A class you dont need to use
+ *
+ * @author hlvs-apps
+ */
+public class RendererTimeLine implements Parcelable {
     private final List<UriIdentifierPair> uriIdentifierPairs;
     private final List<RenderTaskWrapper> renderTaskWrappers;
     private int videoLengthInFrames;
@@ -160,4 +166,56 @@ public class RendererTimeLine implements Serializable {
         renderTaskWrappers.addAll(part.getRenderTaskWrappers());
     }
 
+
+    protected RendererTimeLine(Parcel in) {
+        if (in.readByte() == 0x01) {
+            uriIdentifierPairs = new ArrayList<UriIdentifierPair>();
+            in.readList(uriIdentifierPairs, UriIdentifierPair.class.getClassLoader());
+        } else {
+            uriIdentifierPairs = null;
+        }
+        if (in.readByte() == 0x01) {
+            renderTaskWrappers = new ArrayList<RenderTaskWrapper>();
+            in.readList(renderTaskWrappers, RenderTaskWrapper.class.getClassLoader());
+        } else {
+            renderTaskWrappers = null;
+        }
+        videoLengthInFrames = in.readInt();
+        videoLengthInSeconds = in.readDouble();
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (uriIdentifierPairs == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(uriIdentifierPairs);
+        }
+        if (renderTaskWrappers == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(renderTaskWrappers);
+        }
+        dest.writeInt(videoLengthInFrames);
+        dest.writeDouble(videoLengthInSeconds);
+    }
+
+    public static final Parcelable.Creator<RendererTimeLine> CREATOR = new Parcelable.Creator<RendererTimeLine>() {
+        @Override
+        public RendererTimeLine createFromParcel(Parcel in) {
+            return new RendererTimeLine(in);
+        }
+
+        @Override
+        public RendererTimeLine[] newArray(int size) {
+            return new RendererTimeLine[size];
+        }
+    };
 }

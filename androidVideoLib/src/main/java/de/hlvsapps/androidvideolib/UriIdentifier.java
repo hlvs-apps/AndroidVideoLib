@@ -21,6 +21,8 @@ package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -31,19 +33,19 @@ import java.util.List;
 /**
  * A UriIdentifier contains a Video Uri and and Identifier String to Identify the Uri. The Identifier should be unique, otherwise the VideoProject might not be able to preRender or Render the Project.
  * You can add CustomData, in which you can pack all Information you need to render a this UriIdentifier.
- * You can use CustomData in {@link RenderTask#render(List, List, int)} in the {@link VideoBitmap}.
+ * You can use CustomData in implements Parcelable {@link RenderTask#render(List, List, int)} in the {@link VideoBitmap}.
  *
  * @author hlvs-apps
  */
-public class UriIdentifier implements Serializable {
-    private static final long serialVersionUID = 49L;
+public class UriIdentifier implements Parcelable{
     public static final int START_IN_VIDEO_SEGMENT_NOT_SET=-12354;
-    private int customLengthInFrames,customLengthInSeconds;
+    private int customLengthInFrames;
+    private int customLengthInSeconds;
     private String identifier;
     private Uri uri;
     private int startInVideoSegment;
 
-    private List<Object> customData;
+    private List<Serializable> customData;
 
     /**
      * Creates a normal {@link UriIdentifier}
@@ -94,17 +96,17 @@ public class UriIdentifier implements Serializable {
      * @param customData The Custom Data you want to add.
      * @see UriIdentifier
      */
-    public void addCustomData(Object... customData){
+    public void addCustomData(Serializable... customData){
         if(this.customData==null)this.customData=new ArrayList<>();
         this.customData.addAll(Arrays.asList(customData));
     }
 
     /**
-     * Sets custom  Object Data
+     * Sets custom Object Data
      * @param customData The Custom Data you want to set, as new Custom Data.
      * @see UriIdentifier
      */
-    public void setCustomData(List<Object> customData) {
+    public void setCustomData(List<Serializable> customData) {
         this.customData = customData;
     }
 
@@ -168,4 +170,51 @@ public class UriIdentifier implements Serializable {
     public Uri getUri() {
         return uri;
     }
+
+    protected UriIdentifier(Parcel in) {
+        customLengthInFrames = in.readInt();
+        customLengthInSeconds = in.readInt();
+        identifier = in.readString();
+        String uriString=(String) in.readValue(String.class.getClassLoader());
+        uri = Uri.parse(uriString);
+        startInVideoSegment = in.readInt();
+        if (in.readByte() == 0x01) {
+            customData = new ArrayList<Serializable>();
+            in.readList(customData, Serializable.class.getClassLoader());
+        } else {
+            customData = null;
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(customLengthInFrames);
+        dest.writeInt(customLengthInSeconds);
+        dest.writeString(identifier);
+        dest.writeValue(uri.toString());
+        dest.writeInt(startInVideoSegment);
+        if (customData == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(customData);
+        }
+    }
+
+    public static final Parcelable.Creator<UriIdentifier> CREATOR = new Parcelable.Creator<UriIdentifier>() {
+        @Override
+        public UriIdentifier createFromParcel(Parcel in) {
+            return new UriIdentifier(in);
+        }
+
+        @Override
+        public UriIdentifier[] newArray(int size) {
+            return new UriIdentifier[size];
+        }
+    };
 }

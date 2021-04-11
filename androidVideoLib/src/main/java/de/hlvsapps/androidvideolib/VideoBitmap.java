@@ -20,17 +20,15 @@
 package de.hlvsapps.androidvideolib;
 
 import android.graphics.Bitmap;
-
-import java.io.Serializable;
-
+import android.os.Parcel;
+import android.os.Parcelable;
 
 /**
  * A Bitmap with UriIdentifier
  *
  * @author hlvs-apps
  */
-public class VideoBitmap implements Serializable {
-    private static final long serialVersionUID = 46L;
+public class VideoBitmap implements Parcelable {
     private final Bitmap bitmap;
     private final UriIdentifier uIdentifier;
     public VideoBitmap(Bitmap bitmap, UriIdentifier uriIdentifier){
@@ -49,4 +47,32 @@ public class VideoBitmap implements Serializable {
     public UriIdentifier getUriIdentifier(){
         return uIdentifier;
     }
+
+    protected VideoBitmap(Parcel in) {
+        bitmap = (Bitmap) in.readValue(Bitmap.class.getClassLoader());
+        uIdentifier = (UriIdentifier) in.readValue(UriIdentifier.class.getClassLoader());
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(bitmap);
+        dest.writeValue(uIdentifier);
+    }
+
+    public static final Parcelable.Creator<VideoBitmap> CREATOR = new Parcelable.Creator<VideoBitmap>() {
+        @Override
+        public VideoBitmap createFromParcel(Parcel in) {
+            return new VideoBitmap(in);
+        }
+
+        @Override
+        public VideoBitmap[] newArray(int size) {
+            return new VideoBitmap[size];
+        }
+    };
 }
