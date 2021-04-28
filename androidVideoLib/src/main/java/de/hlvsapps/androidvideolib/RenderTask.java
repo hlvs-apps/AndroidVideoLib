@@ -21,14 +21,19 @@
 package de.hlvsapps.androidvideolib;
 
 import android.graphics.Bitmap;
+import android.os.Parcelable;
 
 import java.util.List;
 
 /**
- * Interface for Rendering
- *
+ * The Interface used for Rendering. Your Implementation is the main Part of Rendering a Video.
+ * Here you can synchronously modify the Images, the work is done in the RenderTasks.
+ * Because the Work is done in the Render Tasks, your class needs to provide a public static final Parcelable.Creator&lt;YourImplementation&gt; CREATOR field.
+ * The Implementation MUST be in a class with a Canonical Name, otherwise AndroidVideoLib will throw an IllegalArgumentException.
  * @author hlvs-apps
+ * @implNote You MUST PROVIDE A public static final {@link Parcelable.Creator}&lt;YourImplementation&gt; CREATOR field
+ * The Implementation MUST be in a class with a Canonical Name, otherwise AndroidVideoLib will throw an IllegalArgumentException.
  */
-public interface RenderTask {
+public interface RenderTask extends Parcelable{
     List<Bitmap> render(List<VideoBitmap> bitmaps0, List<VideoBitmap> bitmaps1, int frameInProject);
 }

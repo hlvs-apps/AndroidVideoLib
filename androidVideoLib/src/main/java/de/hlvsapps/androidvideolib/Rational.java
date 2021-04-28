@@ -20,15 +20,51 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.jcodec.common.model.RationalLarge;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * copied from JCode
+ * copied from JCode and made Parcelable
  */
-public class Rational extends org.jcodec.common.model.Rational {
+public class Rational extends org.jcodec.common.model.Rational implements Parcelable {
+    private final int num,den;
     public Rational(int num, int den) {
         super(num, den);
+        this.num=num;
+        this.den=den;
     }
+
+    protected Rational(Parcel in) {
+        super(in.readInt(),in.readInt());
+        num = super.getNum();
+        den = super.getDen();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(num);
+        dest.writeInt(den);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<Rational> CREATOR = new Creator<Rational>() {
+        @Override
+        public Rational createFromParcel(Parcel in) {
+            return new Rational(in);
+        }
+
+        @Override
+        public Rational[] newArray(int size) {
+            return new Rational[size];
+        }
+    };
 
     @Override
     public int getNum() {
@@ -191,7 +227,7 @@ public class Rational extends org.jcodec.common.model.Rational {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return super.toString();
     }
 

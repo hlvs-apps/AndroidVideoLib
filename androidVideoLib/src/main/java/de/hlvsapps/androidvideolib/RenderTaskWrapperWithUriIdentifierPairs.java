@@ -69,13 +69,13 @@ public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper i
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(wrapper);
         if (matchingUriIdentifierPairs == null) {
             dest.writeByte((byte) (0x00));
         } else {
             dest.writeByte((byte) (0x01));
             dest.writeList(matchingUriIdentifierPairs);
         }
-        dest.writeValue(wrapper);
     }
 
     public static final Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairs> CREATOR = new Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairs>() {

@@ -33,14 +33,11 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import de.hlvsapps.androidvideolib.R;
 import de.hlvsapps.androidvideolib.RenderTaskWrapper;
 import de.hlvsapps.androidvideolib.UriIdentifier;
-import de.hlvsapps.androidvideolib.VideoBitmap;
 import de.hlvsapps.androidvideolib.VideoPart;
 import de.hlvsapps.androidvideolib.VideoProj;
 import de.hlvsapps.androidvideolib.VideoSegmentWithTime;
@@ -141,24 +138,7 @@ public class video_test extends AppCompatActivity {
         if (requestCode == PICK_VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
             //VideoProj videoProj=new VideoProj("Mein_erstes_Testvideo", new Rational(25,1),this);
             VideoPart part = new VideoPart(
-                    new RenderTaskWrapper((bitmaps0, bitmaps1, frameInProject) -> {
-                        Bitmap bitmap0 = null, bitmap1 = null;
-                        utils.LogD("RUN");
-                        for (VideoBitmap bitmap : bitmaps0) {
-                            if (bitmap.getIdentifier().equals("Test"))
-                                bitmap0 = bitmap.getBitmap();
-                        }
-                        for (VideoBitmap bitmap : bitmaps1) {
-                            if (bitmap.getIdentifier().equals("Test"))
-                                bitmap1 = bitmap.getBitmap();
-                        }
-                        if (bitmap0 != null && bitmap1 != null) {
-                            List<Bitmap> result = new ArrayList<>();
-                            result.add(bitmap0);
-                            return result;
-                        } else if (bitmap0 != null) return Collections.singletonList(bitmap0);
-                        return null;
-                    }, 0, -1)
+                    new RenderTaskWrapper(new MyRenderTaskImplementation(), 0, -1)
                     , 0);
             part.addVideoSegment(
                     new VideoSegmentWithTime(
