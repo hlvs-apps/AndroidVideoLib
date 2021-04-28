@@ -2,7 +2,8 @@
  - This is a part of AndroidVideoLib.                                         -
  - To see the authors, look at Github for contributors of this file.          -
  -                                                                            -
- - Copyright 2021  The AndroidVideoLib Authors:  https://githubcom/hlvs-apps/AndroidVideoLib/blob/master/AUTHOR.md
+ - Copyright 2021  The AndroidVideoLib Authors:                               -
+ -       https://github.com/hlvs-apps/AndroidVideoLib/blob/master/AUTHORS.md  -
  - Unless otherwise noted, this is                                            -
  - Licensed under the Apache License, Version 2.0 (the "License");            -
  - you may not use this file except in compliance with the License.           -
@@ -23,8 +24,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -43,7 +48,7 @@ import java.util.List;
  *
  * @author hlvs-apps
  */
-public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender, Closeable {
+public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender, Closeable, Parcelable {
 
     /**
      * Intent Extra Data Name for the Method currently sending Broadcast. The Possible Options are specified in {@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED}
@@ -94,7 +99,7 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
 
     private final BroadcastReceiver br = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(Context context, @NotNull Intent intent) {
             INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START serializableExtra = (INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START) intent.getSerializableExtra(intentExtraBroadcastToReceiveAction);
             switch (serializableExtra) {
                 case startRecording:
@@ -123,9 +128,12 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
 
     private LocalBroadcastManager localBroadcastManager=null;
 
+    private final boolean registeredReceiver;
+
     public SendProgressAsBroadcast(Context context,boolean registerReceiver,boolean startRecording){
         this.context=context;
         record=startRecording;
+        this.registeredReceiver=registerReceiver;
         if(registerReceiver) {
             localBroadcastManager = LocalBroadcastManager.getInstance(context);
             IntentFilter filter = new IntentFilter(broadcastToReceiveAction);
@@ -230,5 +238,89 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
     @Override
     public void close() {
         if(localBroadcastManager!=null) localBroadcastManager.unregisterReceiver(br);
+    }
+
+    protected SendProgressAsBroadcast(@NotNull Parcel in) {
+        context = (Context) in.readValue(Context.class.getClassLoader());
+        if (in.readByte() == 0x01) {
+            intentsSent = new ArrayList<>();
+            in.readList(intentsSent, Intent.class.getClassLoader());
+        } else {
+            intentsSent = null;
+        }
+        intentInit = (Intent) in.readValue(Intent.class.getClassLoader());
+        record = in.readByte() != 0x00;
+        registeredReceiver = in.readByte() != 0x00;
+        if(registeredReceiver) {
+            localBroadcastManager = LocalBroadcastManager.getInstance(context);
+            IntentFilter filter = new IntentFilter(broadcastToReceiveAction);
+            localBroadcastManager.registerReceiver(br, filter);
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(context);
+        if (intentsSent == null) {
+            dest.writeByte((byte) (0x00));
+        } else {
+            dest.writeByte((byte) (0x01));
+            dest.writeList(intentsSent);
+        }
+        dest.writeValue(intentInit);
+        dest.writeByte((byte) (record ? 0x01 : 0x00));
+        dest.writeByte((byte) (registeredReceiver ? 0x01 : 0x00));
+    }
+
+    public static final Parcelable.Creator<SendProgressAsBroadcast> CREATOR = new Parcelable.Creator<SendProgressAsBroadcast>() {
+        @Override
+        public SendProgressAsBroadcast createFromParcel(Parcel in) {
+            return new SendProgressAsBroadcast(in);
+        }
+
+        @Override
+        public SendProgressAsBroadcast[] newArray(int size) {
+            return new SendProgressAsBroadcast[size];
+        }
+    };
+
+    /**
+     * Enum for possible Calling Methods.<br>
+     * The following Table Shows which Member of this Enum is used for which Method:
+     * <table border="1">
+     * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#preRenderUpdateProgress}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#updateProgress(int, int, boolean)}.</td></tr>
+     * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#renderInstantiateProgressForRendering}</td><td>for</td></td><td> {@link SendProgressAsBroadcast#instantiateProgressesForRendering(int)}.</td></tr>
+     * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#renderUpdateProgressOfX}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#updateProgressOfX(int, int, int, boolean)}.</td></tr>
+     * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#lastRenderUpdateProgressOfSavingVideo}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#updateProgressOfSavingVideo(int, int, boolean)}.</td></tr>
+     * </table>
+     *
+     * @see SendProgressAsBroadcast
+     */
+    public enum INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED{
+        preRenderUpdateProgress,renderInstantiateProgressForRendering,renderUpdateProgressOfX,lastRenderUpdateProgressOfSavingVideo
+    }
+
+    /**
+     * <p>
+     * Enum for calling Methods by {@link LocalBroadcastManager} of this Class, Receiver is Registered in Constructor, if (registerReceiver==true).
+     * </p><p>
+     * You can command the {@link SendProgressAsBroadcast} instance to record all incoming Calls by {@link INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START#startRecording}.
+     * </p><p>
+     * You can get them by {@link INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START#sendRecordedBroadcastAndStopRecording}.
+     * </p><p>
+     * The Callable Methods are:
+     * </p><p>
+     * {@link SendProgressAsBroadcast#instantiateProgressesForRendering(int)}
+     * </p><p>
+     * {@link SendProgressAsBroadcast#close()}
+     * </p>
+     */
+    public enum INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START {
+        sendRenderInstantiateProgressForRendering,startRecording,sendRecordedBroadcastAndStopRecording,close
     }
 }

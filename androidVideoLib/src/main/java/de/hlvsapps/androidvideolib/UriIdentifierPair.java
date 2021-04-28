@@ -22,6 +22,9 @@ package de.hlvsapps.androidvideolib;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Contains {@link UriIdentifier}, with Computed Length, set by {@link RendererTimeLine}
  * You don't need to use this, instead use {@link UriIdentifier}
@@ -92,7 +95,6 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
         dest.writeDouble(lengthInSeconds);
     }
 
-    @SuppressWarnings("unused")
     public static final Parcelable.Creator<UriIdentifierPair> CREATOR = new Parcelable.Creator<UriIdentifierPair>() {
         @Override
         public UriIdentifierPair createFromParcel(Parcel in) {
@@ -104,4 +106,59 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
             return new UriIdentifierPair[size];
         }
     };
+
+
+    public static class UriIdentifierPairList implements Parcelable {
+        private final List<UriIdentifierPair> pairs;
+
+        private UriIdentifierPairList(List<UriIdentifierPair> pairs) {
+            this.pairs = pairs;
+        }
+
+        public static UriIdentifierPairList from(List<UriIdentifierPair> pairs){
+            return new UriIdentifierPairList(pairs);
+        }
+
+        public List<UriIdentifierPair> getPairs() {
+            return pairs;
+        }
+
+        protected UriIdentifierPairList(Parcel in) {
+            if (in.readByte() == 0x01) {
+                pairs = new ArrayList<>();
+                in.readList(pairs, UriIdentifierPair.class.getClassLoader());
+            } else {
+                pairs = null;
+            }
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            if (pairs == null) {
+                dest.writeByte((byte) (0x00));
+            } else {
+                dest.writeByte((byte) (0x01));
+                dest.writeList(pairs);
+            }
+        }
+
+        public static final Parcelable.Creator<UriIdentifierPairList> CREATOR = new Parcelable.Creator<UriIdentifierPairList>() {
+            @Override
+            public UriIdentifierPairList createFromParcel(Parcel in) {
+                return new UriIdentifierPairList(in);
+            }
+
+            @Override
+            public UriIdentifierPairList[] newArray(int size) {
+                return new UriIdentifierPairList[size];
+            }
+        };
+    }
+
+
 }

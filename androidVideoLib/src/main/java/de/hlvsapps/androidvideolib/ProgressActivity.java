@@ -54,7 +54,7 @@ public class ProgressActivity extends AppCompatActivity {
     private final BroadcastReceiver br = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED serializableExtra = (INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED) intent.getSerializableExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED);
+            SendProgressAsBroadcast.INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED serializableExtra = (SendProgressAsBroadcast.INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED) intent.getSerializableExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED);
             switch (serializableExtra) {
                 case preRenderUpdateProgress:
                     //Do Nothing, this will not happen
@@ -119,13 +119,13 @@ public class ProgressActivity extends AppCompatActivity {
         if(instantiate){
             Intent intent = new Intent();
             intent.setAction(broadcastToReceiveAction);
-            intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRenderInstantiateProgressForRendering);
+            intent.putExtra(intentExtraBroadcastToReceiveAction, SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRenderInstantiateProgressForRendering);
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
             instantiate=false;
         }
         Intent intent = new Intent();
         intent.setAction(broadcastToReceiveAction);
-        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRecordedBroadcastAndStopRecording);
+        intent.putExtra(intentExtraBroadcastToReceiveAction, SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.sendRecordedBroadcastAndStopRecording);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -135,7 +135,7 @@ public class ProgressActivity extends AppCompatActivity {
         localBroadcastManager.unregisterReceiver(br);
         Intent intent = new Intent();
         intent.setAction(broadcastToReceiveAction);
-        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.startRecording);
+        intent.putExtra(intentExtraBroadcastToReceiveAction, SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.startRecording);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -143,7 +143,7 @@ public class ProgressActivity extends AppCompatActivity {
     protected void onDestroy() {
         Intent intent = new Intent();
         intent.setAction(broadcastToReceiveAction);
-        intent.putExtra(intentExtraBroadcastToReceiveAction,INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.close);
+        intent.putExtra(intentExtraBroadcastToReceiveAction, SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START.close);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         l.release();
         super.onDestroy();

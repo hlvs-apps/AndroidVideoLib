@@ -25,5 +25,8 @@ package de.hlvsapps.androidvideolib;
  * @author hlvs-apps
  */
 public interface ProgressPreRender {
+    String progressPreRenderState="progressPreRenderState";
+    String progressPreRenderMax="progressPreRenderMax";
+    String progressPreRenderFinished="progressPreRenderFinished";
     void updateProgress(int state,int max,boolean finished);
 }

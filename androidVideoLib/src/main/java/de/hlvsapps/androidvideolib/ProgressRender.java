@@ -19,13 +19,15 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.os.Parcelable;
+
 /**
  * Interface for Updating progress while Rendering.
  * While Rendering, you need x+1 views, x for the Tasks while Rendering, 1 for the Last Task, Saving the Video
  *
  * @author hlvs-apps
  */
-public interface ProgressRender {
+public interface ProgressRender extends Parcelable {
     /**
      * Instantiate x views
      * @param num x views

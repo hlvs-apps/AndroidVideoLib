@@ -19,17 +19,27 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+import androidx.work.Data;
+import androidx.work.ForegroundInfo;
 import androidx.work.ListenableWorker;
+import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
 import org.jcodec.api.PictureWithMetadata;
@@ -51,83 +61,100 @@ import java.util.Collections;
 import java.util.List;
 
 import static android.content.Context.POWER_SERVICE;
-import static de.hlvsapps.androidvideolib.VideoProj.WAKE_LOCK_ID;
+import static de.hlvsapps.androidvideolib.VideoProj.END_OF_WAKE_LOCK_ID;
 
+/**
+ * <p>{@link Worker} implementation to save the Pictures of the Videos contained in {@link de.hlvsapps.androidvideolib.UriIdentifierPair.UriIdentifierPairList}</p>
+ * <p>Usage:</p>
+ * <p><pre><code>
+ *             OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
+ *                 .setConstraints(constraints)
+ *                 .setInputData((new Data.Builder())
+ *                         .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(<strong>(Your {@link de.hlvsapps.androidvideolib.UriIdentifierPair.UriIdentifierPairList})</strong>>)))
+ *                         .putByteArray(PreRenderer.serializableByteArrayScaleFactor, SerializationUtils.serialize(scaleFactor))
+ *                         .build())
+ *                 .build();
+ *         WorkManager.getInstance(context.getApplicationContext())
+ *                 .enqueueUniqueWork("Import"+toString(),ExistingWorkPolicy.REPLACE,renderRequest);
+ * </code></pre></p>
+ * <p>To get Progress Update:</p>
+ * <p><pre><code>
+ *                 WorkManager.getInstance(context.getApplicationContext())
+ *                     .getWorkInfoByIdLiveData(renderRequest.getId())
+ *                     .observeForever(new Observer<WorkInfo>() {
+ *                         &#64;Override
+ *                         public void onChanged(WorkInfo workInfo) {
+ *                             if (workInfo != null) {
+ *                                 Data progressD = workInfo.getProgress();
+ *                                 int progress = progressD.getInt(ProgressPreRender.progressPreRenderState, -11);
+ *                                 int max = progressD.getInt(ProgressPreRender.progressPreRenderMax, -11);
+ *                                 boolean finished = progressD.getBoolean(ProgressPreRender.progressPreRenderMax, false);
+ *                                 // Do something with progress, max, finished
+ *                                 if (workInfo.getState().isFinished()) {
+ *                                     WorkManager.getInstance(context.getApplicationContext()).getWorkInfoByIdLiveData(renderRequest.getId()).removeObserver(this);
+ *                                 }
+ *                             }
+ *                         }
+ *                     });
+ * </code></pre></p>
+ * @see VideoProj#preRender(Runnable, ProgressPreRender)
+ * @author hlvs-apps
+ */
 public class PreRenderer extends Worker {
-    static VideoProj proj;
-    static Runnable whatDoAfter=null;
-
     private ExecutorPool pool;
+    private final Context context;
+    private final List<UriIdentifierPair> workList;
+    private final BigDecimal scaleFactor;
 
-    static ProgressPreRender progressPreRender=null;
+    public static final int NOTIFICATION_ID =1036;
+    public static final String CHANNEL_ID = "CHANNEL_ID_PRE_RENDER";
+
+    private final String WAKE_LOCK_ID;
+
+    //private NotificationManagerCompat notificationManager;
+    //private NotificationCompat.Builder builder;
+
+    final static String parcelableByteArrayListUriIdentifierPair="ParcelableByteArrayListUriIdentifierPair";
+    final static String serializableByteArrayScaleFactor="serializableByteArrayScaleFactor";
 
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
+        this.context=context;
+        WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
+        Data inputData=workerParams.getInputData();
+        workList = utils.unmarshal(inputData.getByteArray(parcelableByteArrayListUriIdentifierPair), UriIdentifierPair.UriIdentifierPairList.CREATOR).getPairs();
+        scaleFactor= SerializationUtils.deserialize(inputData.getByteArray(serializableByteArrayScaleFactor));
+
         //this.proj=proj;
     }
 
     @NotNull
     public ListenableWorker.Result doWork(){
-        if(proj!=null) {
-            try {
+        try {
                 return preRender();
             } catch (Exception e) {
                 utils.LogE(e);
                 return ListenableWorker.Result.failure();
             }
-        }else{
-            return ListenableWorker.Result.failure();
-        }
     }
 
-    private void saveBitmap(Bitmap b, String fileName, boolean doScale,BigDecimal scaleFactor){
-        long timeBefore=System.currentTimeMillis();
-        pool.attachToExecutorOrExecuteWhenNoExecutorAvailable(() -> {
-            Bitmap bitmap=b;
-            if (doScale) {
-                int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
-                int newWidth = scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
-                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
-            }
-            utils.saveToExternalStorage(bitmap, proj.getContext(), fileName);
-        });
-        utils.LogI("Required Time for Saving Image: "+(System.currentTimeMillis()-timeBefore)+" Millis");
-    }
-
-    private Triple<Integer,ArrayList<SortedPicture>,Double> sortImagesAndSave(ArrayList<SortedPicture> pics, int ii, boolean doScale, BigDecimal scaleFactor, String name, boolean isLast, double endBefore){
-        Collections.sort(pics);
-        ArrayList<SortedPicture> rest=null;
-        for(final SortedPicture realPic:pics) {
-            if (isLast || endBefore==0 || realPic.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(endBefore)) {
-                endBefore= realPic.getTimestampPlusDuration();
-                Bitmap bitmap = realPic.getBitmap();
-                final String fileName=name + ii;
-                ii++;
-                saveBitmap(bitmap,fileName,doScale,scaleFactor);
-            }else{
-                if(rest==null)rest=new ArrayList<>();
-                rest.add(realPic);
-            }
-        }
-        return Triple.createFinalTriple(ii,rest,endBefore);
-    }
 
     private synchronized Result preRender() {
         //Enable Wakelook
-        PowerManager powerManager = (PowerManager) proj.getContext().getSystemService(POWER_SERVICE);
-        proj.setWakeLock( powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
-        proj.getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
+        PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
+        wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
+
+
+        setForegroundAsync(createForegroundInfo(0,1,true,false));
 
         pool=new ExecutorPool(10);
 
         utils.LogI("PreRender");
         try {
-            List<UriIdentifierPair> workList = proj.getAllUriIdentifierPairsFromInput();
-            int length = workList.size();
-            ContentResolver resolver = proj.getContext().getApplicationContext().getContentResolver();
+            ContentResolver resolver = context.getApplicationContext().getContentResolver();
             int j=0;
             Yuv420pToRgb ytb = new Yuv420pToRgb();
-            BigDecimal scaleFactor=proj.getScaleFactor();
             boolean doScale=scaleFactor.compareTo(new BigDecimal(1))!=0;
             int complete_length=0,currentEndPos=0;
             for(UriIdentifierPair i: workList){
@@ -155,12 +182,6 @@ public class PreRenderer extends Worker {
                                         ytb.transform(picture, pic3);
                                         picture = pic3;
                                     }
-                                    if(iji==0){
-                                        proj.setPic0(Picture.copyPicture(picture));
-                                    }
-                                    if (proj.getPic0() == null) {
-                                        proj.setPic0(Picture.copyPicture(picture));
-                                    }
                                     int angel;
                                     DemuxerTrackMeta.Orientation orientation = pic.getOrientation();
                                     switch (orientation) {
@@ -180,9 +201,11 @@ public class PreRenderer extends Worker {
                                     pics.add(new SortedPicture(pic.getTimestamp(),(angel != 0) ? utils.RotateBitmap(AndroidUtil.toBitmap(picture), angel) : AndroidUtil.toBitmap(picture),pic.getDuration()));
                                     //See https://github.com/jcodec/jcodec/issues/165
                                     try {
-                                        proj.setNotificationProgress(complete_length, iji+currentEndPos, false);
-                                        if (progressPreRender != null)
-                                            progressPreRender.updateProgress(iji+currentEndPos, complete_length, false);
+                                        setNotificationProgress(complete_length, iji+currentEndPos, false);
+                                        setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState,iji+currentEndPos)
+                                                .putInt(ProgressPreRender.progressPreRenderMax,complete_length)
+                                                .putBoolean(ProgressPreRender.progressPreRenderFinished,false)
+                                                .build());
                                     }catch (Exception ignored){}
                                     if(iji!=0 && iji%10==0){
                                         utils.LogD("Start Saving with "+iji);
@@ -209,23 +232,112 @@ public class PreRenderer extends Worker {
             }
         }catch (Exception e){
             utils.LogE(e);
-            proj.getWakeLock().release();
+            wakeLock.release();
             try {
-                proj.setNotificationProgress(1, 1, true);
+                setNotificationProgress(1, 1, true);
                 //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-                if (progressPreRender != null) progressPreRender.updateProgress(1, 1, true);
+                setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState,1)
+                        .putInt(ProgressPreRender.progressPreRenderMax,1)
+                        .putBoolean(ProgressPreRender.progressPreRenderFinished,true)
+                        .build());
             }catch (Exception ignored){}
             throw e;
         }
-        proj.setNotificationProgress(1, 1, true);
-        if(progressPreRender!=null)progressPreRender.updateProgress(1,1,true);
+        setNotificationProgress(1, 1, true);
+        setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState,1)
+                .putInt(ProgressPreRender.progressPreRenderMax,1)
+                .putBoolean(ProgressPreRender.progressPreRenderFinished,true)
+                .build());
         //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-        proj.getWakeLock().release();
-        if(whatDoAfter!=null)whatDoAfter.run();
-        proj=null;
-        whatDoAfter=null;
-        progressPreRender=null;
+        wakeLock.release();
         return Result.success();
+    }
+
+    @NonNull
+    private ForegroundInfo createForegroundInfo(int progress,int max,boolean intermediate,boolean finished) {
+        // Build a notification using bytesRead and contentLength
+
+        Context context = getApplicationContext();
+        String title = context.getString(R.string.importingVideos);
+        String cancel = context.getString(R.string.cancel);
+        // This PendingIntent can be used to cancel the worker
+        PendingIntent intent = WorkManager.getInstance(context)
+                .createCancelPendingIntent(getId());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createChannel();
+        }
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(title)
+                .setTicker(title)
+                .setChannelId(CHANNEL_ID)
+                .setNotificationSilent()
+                .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.ic_baseline_import_export_24);
+        if(!finished) {
+            notificationBuilder=notificationBuilder.setProgress(max, progress, intermediate)
+                    .setOngoing(true)
+                    // Add the cancel action to the notification which can
+                    // be used to cancel the worker
+                    .addAction(android.R.drawable.ic_delete, cancel, intent);
+        }else{
+            notificationBuilder=notificationBuilder.setOngoing(false)
+                    .setContentText(context.getString(R.string.importingComplete))
+                    .setProgress(1,1,false);
+        }
+
+        return new ForegroundInfo(NOTIFICATION_ID,notificationBuilder.build());
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createChannel() {
+        CharSequence name = context.getString(R.string.preRenderChannelName);
+        String description = context.getString(R.string.importingVideos);
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+
+    private void setNotificationProgress(int max, int progress, boolean finsih){
+        setForegroundAsync(createForegroundInfo(progress,max,false,finsih));
+    }
+
+    private void saveBitmap(Bitmap b, String fileName, boolean doScale,BigDecimal scaleFactor){
+        long timeBefore=System.currentTimeMillis();
+        pool.attachToExecutorOrExecuteWhenNoExecutorAvailable(() -> {
+            Bitmap bitmap=b;
+            if (doScale) {
+                int newHeight = scaleFactor.multiply(new BigDecimal(bitmap.getHeight())).intValue();
+                int newWidth = scaleFactor.multiply(new BigDecimal(bitmap.getWidth())).intValue();
+                bitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+            }
+            utils.saveToExternalStorage(bitmap, context, fileName);
+        });
+        utils.LogI("Required Time for Saving Image: "+(System.currentTimeMillis()-timeBefore)+" Millis");
+    }
+
+    private Triple<Integer,ArrayList<SortedPicture>,Double> sortImagesAndSave(ArrayList<SortedPicture> pics, int ii, boolean doScale, BigDecimal scaleFactor, String name, boolean isLast, double endBefore){
+        Collections.sort(pics);
+        ArrayList<SortedPicture> rest=null;
+        for(final SortedPicture realPic:pics) {
+            if (isLast || endBefore==0 || realPic.doesTimeStampPlusDurationBeforeEqualThisTimeStamp(endBefore)) {
+                endBefore= realPic.getTimestampPlusDuration();
+                Bitmap bitmap = realPic.getBitmap();
+                final String fileName=name + ii;
+                ii++;
+                saveBitmap(bitmap,fileName,doScale,scaleFactor);
+            }else{
+                if(rest==null)rest=new ArrayList<>();
+                rest.add(realPic);
+            }
+        }
+        return Triple.createFinalTriple(ii,rest,endBefore);
     }
 
     public static class ExecutorPool{

@@ -20,6 +20,7 @@
 package de.hlvsapps.androidvideolib;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
@@ -33,6 +34,7 @@ import org.jcodec.api.SequenceEncoder;
 import org.jcodec.common.AndroidUtil;
 import org.jcodec.common.io.FileChannelWrapper;
 import org.jcodec.common.model.ColorSpace;
+import org.jcodec.common.model.Picture;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
@@ -106,7 +108,10 @@ public class LastRenderer extends Worker {
                 //Amend
                 utils.LogD(String.valueOf(i));
                 utils.LogD(name);
-                enc.encodeNativeFrame(AndroidUtil.fromBitmap(utils.readFromExternalExportStorageAndDelete(proj.getContext(), name), pic0));
+                Bitmap b=utils.readFromExternalExportStorageAndDelete(proj.getContext(), name);
+                Picture picture=AndroidUtil.fromBitmap(b,pic0);
+                utils.LogD(picture.getColor().toString());
+                enc.encodeNativeFrame(picture);
                 proj.setNotificationProgress(length, i, false);
                 /*setProgressAsync(new Data.Builder()
                         .putInt("progress",i)

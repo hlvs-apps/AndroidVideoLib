@@ -32,12 +32,15 @@ import android.os.PowerManager;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.lifecycle.Observer;
 import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.jcodec.common.model.Picture;
 import org.jetbrains.annotations.NotNull;
 
@@ -309,10 +312,6 @@ public class VideoProj implements Serializable {
         updateRenderTimeLine();
     }
 
-    List<UriIdentifierPair> getAllUriIdentifierPairsFromInput(){
-        return rendererTimeLine.getUriIdentifierPairs();
-    }
-
     void setWakeLock(PowerManager.WakeLock wakeLock) {
         this.wakeLock = wakeLock;
     }
@@ -420,8 +419,8 @@ public class VideoProj implements Serializable {
      * @param onProgress On Do Progress
      */
     public void preRender(Runnable onFinish, ProgressPreRender onProgress){
-        PreRenderer.progressPreRender=onProgress;
         askForBackgroundPermissions();
+        /*
         Intent intent = new Intent(context, renderActivity);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
@@ -430,7 +429,6 @@ public class VideoProj implements Serializable {
         builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
         builder.setContentTitle("Importing")
                 .setContentText("Importing in progress")
-                //TODO update
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
@@ -438,12 +436,10 @@ public class VideoProj implements Serializable {
         // Issue the initial notification with zero progress
 
         builder.setProgress(100, 1, true);
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
+        notificationManager.notify(NOTIFICATION_ID, builder.build());*/
 
     // Do the job here that tracks the progress.
 
-        PreRenderer.proj=this;
-        PreRenderer.whatDoAfter=onFinish;
         Constraints constraints;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             constraints = new Constraints.Builder()
@@ -457,10 +453,43 @@ public class VideoProj implements Serializable {
                     .setRequiresBatteryNotLow(false)
                     .build();
         }
+
         OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
                 .setConstraints(constraints)
+                .setInputData((new Data.Builder())
+                        .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(rendererTimeLine.getUriIdentifierPairs())))
+                        .putByteArray(PreRenderer.serializableByteArrayScaleFactor, SerializationUtils.serialize(scaleFactor))
+                        .build())
                 .build();
-        WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render",ExistingWorkPolicy.REPLACE,renderRequest);
+        WorkManager.getInstance(context.getApplicationContext())
+                .enqueueUniqueWork("Import"+toString(),ExistingWorkPolicy.REPLACE,renderRequest);
+        if(onFinish==null){
+            onFinish= () -> {
+            };
+        }
+        if(onProgress!=null) {
+            final Runnable finalOnFinish = onFinish;
+            WorkManager.getInstance(context.getApplicationContext())
+                    .getWorkInfoByIdLiveData(renderRequest.getId())
+                    .observeForever(new Observer<WorkInfo>() {
+                        @Override
+                        public void onChanged(WorkInfo workInfo) {
+                            if (workInfo != null) {
+                                Data progressD = workInfo.getProgress();
+                                int progress = progressD.getInt(ProgressPreRender.progressPreRenderState, -11);
+                                int max = progressD.getInt(ProgressPreRender.progressPreRenderMax, -11);
+                                boolean finished = progressD.getBoolean(ProgressPreRender.progressPreRenderMax, false);
+                                if (progress != -11 && max != -11) {
+                                    onProgress.updateProgress(progress,max,finished);
+                                }
+                                if (workInfo.getState().isFinished()) {
+                                    finalOnFinish.run();
+                                    WorkManager.getInstance(context.getApplicationContext()).getWorkInfoByIdLiveData(renderRequest.getId()).removeObserver(this);
+                                }
+                            }
+                        }
+                    });
+        }
     }
 
     /**
@@ -514,6 +543,7 @@ public class VideoProj implements Serializable {
      * @throws IllegalStateException When FPS is null
      */
     public void renderInTo(String output,ProgressRender progressRender) throws IllegalStateException{
+        pic0=utils.getPictureFromUriIdentifierPairs(rendererTimeLine.getUriIdentifierPairs(),context);
         this.output=output;
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");

@@ -30,20 +30,30 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import org.jcodec.api.FrameGrab;
+import org.jcodec.api.JCodecException;
+import org.jcodec.api.PictureWithMetadata;
 import org.jcodec.common.DemuxerTrack;
 import org.jcodec.common.io.FileChannelWrapper;
+import org.jcodec.common.model.ColorSpace;
+import org.jcodec.common.model.Picture;
 import org.jcodec.containers.mp4.demuxer.MP4Demuxer;
+import org.jcodec.scale.Yuv420pToRgb;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -271,7 +281,88 @@ public class utils {
     }
 
 
+    //From https://gist.github.com/omarmiatello/6711967
+    public static byte[] marshall(Parcelable parceable) {
+        Parcel parcel = Parcel.obtain();
+        parceable.writeToParcel(parcel, 0);
+        byte[] bytes = parcel.marshall();
+        parcel.recycle(); // not sure if needed or a good idea
+        return bytes;
+    }
 
+    /**
+     * Writes a byte Array to a temp file, which will be deleted at the Apps shutdown
+     * @param context Your Context
+     * @param array The byte Array
+     * @return The File to the Temp file
+     * @throws IOException IOException thrown by inner methods
+     */
+    public static File writeByteArrayToTempFile(Context context,byte[] array) throws IOException {
+        File outputDir = context.getCacheDir(); // context being the Activity pointer
+        File outputFile = File.createTempFile("TmpByteArray", "bytearray", outputDir);
+        try(FileOutputStream stream = new FileOutputStream(outputFile)){
+            stream.write(array);
+        }
+        return outputFile;
+    }
+
+    /**
+     * Reads a File to an object implementing parcelable
+     * @param file The file
+     * @param creator The Creator of the wanted Object
+     * @return The Object
+     * @throws IOException IOException thrown by inner methods
+     */
+    public static <T extends Parcelable> T getParcelableFromTempFile(File file,Parcelable.Creator<T> creator) throws IOException {
+        int size = (int) file.length();
+        byte[] bytes = new byte[size];
+        BufferedInputStream buf = new BufferedInputStream(new FileInputStream(file));
+        buf.read(bytes, 0, bytes.length);
+        return unmarshal(bytes, creator);
+    }
+    //From https://gist.github.com/omarmiatello/6711967
+    public static <T extends Parcelable> T unmarshal(byte[] bytes, Parcelable.Creator<T> creator) {
+        Parcel parcel = unmarshal(bytes);
+        return creator.createFromParcel(parcel);
+    }
+    //From https://gist.github.com/omarmiatello/6711967
+    public static Parcel unmarshal(byte[] bytes) {
+        Parcel parcel = Parcel.obtain();
+        parcel.unmarshall(bytes, 0, bytes.length);
+        parcel.setDataPosition(0); // this is extremely important!
+        return parcel;
+    }
+
+    public static Picture getPictureFromUriIdentifierPairs(List<UriIdentifierPair> pairs,Context context){
+        ContentResolver resolver = context.getApplicationContext().getContentResolver();
+        Yuv420pToRgb ytb = new Yuv420pToRgb();
+        for (UriIdentifierPair i : pairs) {
+            try(ParcelFileDescriptor pfd=resolver.openFileDescriptor(i.getUriIdentifier().getUri(), "r")) {
+                try (FileInputStream t = new FileInputStream(pfd.getFileDescriptor())) {
+                    try (FileChannel c = t.getChannel()) {
+                        try (FileChannelWrapper ch = new FileChannelWrapper(c)) {
+                            FrameGrab grab = FrameGrab.createFrameGrab(ch);
+                            PictureWithMetadata pic=grab.getNativeFrameWithMetadata();
+                            Picture picture = pic.getPicture();
+                            if (picture.getColor() == ColorSpace.YUV420) {
+                                Picture pic3 = Picture.create(picture.getWidth(), picture.getHeight(), ColorSpace.RGB);
+                                ytb.transform(picture, pic3);
+                                picture=pic3;
+                            }
+                            return picture;
+                        } catch (IOException | JCodecException e) {
+                            utils.LogE(e);
+                        }
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                utils.LogE(e);
+            } catch (IOException e) {
+                utils.LogE(e);
+            }
+        }
+        throw new IllegalStateException("No Picture found");
+    }
 
     public static void LogI(String msg) {
         if (msg==null){

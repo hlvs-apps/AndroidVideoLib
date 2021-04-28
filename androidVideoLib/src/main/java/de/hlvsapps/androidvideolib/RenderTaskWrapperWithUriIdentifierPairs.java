@@ -88,4 +88,56 @@ public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper i
             return new RenderTaskWrapperWithUriIdentifierPairs[size];
         }
     };
+
+    public static class RenderTaskWrapperWithUriIdentifierPairsList implements Parcelable {
+        private final List<RenderTaskWrapperWithUriIdentifierPairs> pairs;
+
+        private RenderTaskWrapperWithUriIdentifierPairsList(List<RenderTaskWrapperWithUriIdentifierPairs> pairs) {
+            this.pairs = pairs;
+        }
+
+        public static RenderTaskWrapperWithUriIdentifierPairsList from(List<RenderTaskWrapperWithUriIdentifierPairs> pairs) {
+            return new RenderTaskWrapperWithUriIdentifierPairsList(pairs);
+        }
+
+        public List<RenderTaskWrapperWithUriIdentifierPairs> getPairs() {
+            return pairs;
+        }
+
+        protected RenderTaskWrapperWithUriIdentifierPairsList(Parcel in) {
+            if (in.readByte() == 0x01) {
+                pairs = new ArrayList<RenderTaskWrapperWithUriIdentifierPairs>();
+                in.readList(pairs, RenderTaskWrapperWithUriIdentifierPairs.class.getClassLoader());
+            } else {
+                pairs = null;
+            }
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            if (pairs == null) {
+                dest.writeByte((byte) (0x00));
+            } else {
+                dest.writeByte((byte) (0x01));
+                dest.writeList(pairs);
+            }
+        }
+
+        public static final Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairsList> CREATOR = new Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairsList>() {
+            @Override
+            public RenderTaskWrapperWithUriIdentifierPairsList createFromParcel(Parcel in) {
+                return new RenderTaskWrapperWithUriIdentifierPairsList(in);
+            }
+
+            @Override
+            public RenderTaskWrapperWithUriIdentifierPairsList[] newArray(int size) {
+                return new RenderTaskWrapperWithUriIdentifierPairsList[size];
+            }
+        };
+    }
 }

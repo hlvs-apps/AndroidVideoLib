@@ -19,6 +19,44 @@
 
 package de.hlvsapps.androidvideolib;
 
-public enum INTENT_EXTRA_DATA_NAME_OF_FUNCTION_TO_START {
-    sendRenderInstantiateProgressForRendering,startRecording,sendRecordedBroadcastAndStopRecording,close
+
+import android.os.Handler;
+import android.os.Looper;
+
+import java.util.concurrent.Executor;
+
+/**
+ * A Executor to Execute with the given {@link LooperType}
+ * @author hlvs-apps
+ */
+public class ThreadExecutor implements Executor {
+    private final Handler handler;
+
+    private ThreadExecutor(LooperType type) {
+        handler = new Handler(type.getLooperWithType());
+    }
+    public static ThreadExecutor getInstance(){
+        return new ThreadExecutor(LooperType.CurrentLooper);
+    }
+    public static ThreadExecutor getInstance(LooperType looperType){
+        return new ThreadExecutor(looperType);
+    }
+
+    @Override
+    public void execute(Runnable r) {
+        handler.post(r);
+    }
+
+    public enum LooperType{
+        CurrentLooper, MainLooper;
+        public Looper getLooperWithType(){
+            switch (this){
+                case MainLooper:
+                    return Looper.getMainLooper();
+                case CurrentLooper:
+                    default:
+                        return Looper.myLooper();
+            }
+        }
+    }
 }
