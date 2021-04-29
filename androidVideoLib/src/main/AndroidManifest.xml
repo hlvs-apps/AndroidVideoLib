@@ -23,7 +23,7 @@
     package="de.hlvsapps.androidvideolib">
 
     <application>
-        <activity android:name=".ProgressActivity"
+        <activity android:name=".implementation.ProgressActivity"
             android:configChanges="orientation|screenSize"/>
     </application>
     <uses-permission android:name="android.permission.WAKE_LOCK" />

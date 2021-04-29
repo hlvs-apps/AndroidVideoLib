@@ -20,9 +20,6 @@
 
 package de.hlvsapps.androidvideolib;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -31,8 +28,6 @@ import android.os.Build;
 import android.os.PowerManager;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.lifecycle.Observer;
 import androidx.work.Constraints;
 import androidx.work.Data;
@@ -42,9 +37,9 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.jcodec.common.model.Picture;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -56,7 +51,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
-import static android.content.Context.POWER_SERVICE;
+import de.hlvsapps.androidvideolib.implementation.ProgressActivity;
+import de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast;
+
+import static de.hlvsapps.androidvideolib.Renderer.numOfThisWorkerDataExtra;
+import static de.hlvsapps.androidvideolib.Renderer.rendererWhenEndDataExtra;
+import static de.hlvsapps.androidvideolib.Renderer.rendererWhenStartDataExtra;
 
 /**
  * The Main Class of AndroidVideoLib.
@@ -74,31 +74,15 @@ public class VideoProj implements Serializable {
     // This will allow us to have additional deserialization logic on top of the default one e.g. decrypting object after deserialization
     private void readObject(@NotNull ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject(); // Calling the default deserialization logic
-        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
-    public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
-    public static final String DATA_ID_RENDERER="DATA_ID_RENDERER";
-    public static final String DATA_ID_RENDERER_START="DATA_ID_RENDERER_START";
-    public static final String DATA_ID_RENDERER_END="DATA_ID_RENDERER_END";
-    public static final String END_OF_WAKE_LOCK_ID="::RenderLock";
-    transient public static String WAKE_LOCK_ID ;
-
-    public static final int NOTIFICATION_ID =1034;
-
-    NotificationManagerCompat notificationManager;
-    NotificationCompat.Builder builder;
-
-    List<String> [] inputs_from_last_render;
-    Picture pic0=null;
 
     private String output;
     private List<VideoPart> input;
     private final AppCompatActivity context;
 
     private Class renderActivity;
-    private PowerManager.WakeLock wakeLock;
     transient private int length;
     transient private double length_seconds;
 
@@ -136,16 +120,6 @@ public class VideoProj implements Serializable {
         return scaleFactor;
     }
 
-    Picture getPic0() {
-        utils.LogD("Return Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
-        return pic0;
-    }
-
-    void setPic0(Picture pic0) {
-        this.pic0 = pic0;
-        utils.LogD("New Pic0. Pic0 is "+((pic0==null)?"null":"not null"));
-    }
-
     /**
      * Sets the Activity class to show render Progress.
      * @param a The Render Activity Class
@@ -170,7 +144,6 @@ public class VideoProj implements Serializable {
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
         renderActivity= context.getClass();
-        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
@@ -190,7 +163,6 @@ public class VideoProj implements Serializable {
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
         renderActivity= context.getClass();
-        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
@@ -209,7 +181,6 @@ public class VideoProj implements Serializable {
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
         renderActivity= context.getClass();
-        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
@@ -227,7 +198,6 @@ public class VideoProj implements Serializable {
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
         renderActivity= context.getClass();
-        WAKE_LOCK_ID=utils.getApplicationName(context)+END_OF_WAKE_LOCK_ID;
         utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
@@ -311,10 +281,6 @@ public class VideoProj implements Serializable {
         this.input.addAll(inputs);
         this.rendererTimeLine.addAllParts(inputs);
         updateRenderTimeLine();
-    }
-
-    void setWakeLock(PowerManager.WakeLock wakeLock) {
-        this.wakeLock = wakeLock;
     }
 
     /**
@@ -408,7 +374,7 @@ public class VideoProj implements Serializable {
      *
      * @param onProgress On Do Progress
      */
-    public void preRender(ProgressPreRender onProgress){
+    public void preRender(PreRenderer.ProgressPreRender onProgress){
         preRender(() -> utils.LogI("Rendering finished"),onProgress);
     }
 
@@ -419,25 +385,8 @@ public class VideoProj implements Serializable {
      * @param onFinish Runnable to Execute when preRendering finished
      * @param onProgress On Do Progress
      */
-    public void preRender(Runnable onFinish, ProgressPreRender onProgress){
+    public void preRender(Runnable onFinish, PreRenderer.ProgressPreRender onProgress){
         askForBackgroundPermissions();
-        /*
-        Intent intent = new Intent(context, renderActivity);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        notificationManager = NotificationManagerCompat.from(context.getApplicationContext());
-        builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
-        builder.setContentTitle("Importing")
-                .setContentText("Importing in progress")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_LOW);
-        createNotificationChannel();
-        // Issue the initial notification with zero progress
-
-        builder.setProgress(100, 1, true);
-        notificationManager.notify(NOTIFICATION_ID, builder.build());*/
 
     // Do the job here that tracks the progress.
 
@@ -477,9 +426,9 @@ public class VideoProj implements Serializable {
                         public void onChanged(WorkInfo workInfo) {
                             if (workInfo != null) {
                                 Data progressD = workInfo.getProgress();
-                                int progress = progressD.getInt(ProgressPreRender.progressPreRenderState, -11);
-                                int max = progressD.getInt(ProgressPreRender.progressPreRenderMax, -11);
-                                boolean finished = progressD.getBoolean(ProgressPreRender.progressPreRenderMax, false);
+                                int progress = progressD.getInt(PreRenderer.ProgressPreRender.progressPreRenderState, -11);
+                                int max = progressD.getInt(PreRenderer.ProgressPreRender.progressPreRenderMax, -11);
+                                boolean finished = progressD.getBoolean(PreRenderer.ProgressPreRender.progressPreRenderMax, false);
                                 if (progress != -11 && max != -11) {
                                     onProgress.updateProgress(progress,max,finished);
                                 }
@@ -544,39 +493,16 @@ public class VideoProj implements Serializable {
      * @throws IllegalStateException When FPS is null
      */
     public void renderInTo(String output,ProgressRender progressRender) throws IllegalStateException{
-        pic0=utils.getPictureFromUriIdentifierPairs(rendererTimeLine.getUriIdentifierPairs(),context);
         this.output=output;
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");
         }
-        PowerManager powerManager = (PowerManager) getContext().getSystemService(POWER_SERVICE);
-        setWakeLock(powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_ID));
-        getWakeLock().acquire(/*100*60*1000L /*100 minutes*/);
 
         //askForBackgroundPermissions();
 
-        Intent intent = new Intent(context, renderActivity);
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
-
-        notificationManager = NotificationManagerCompat.from(context.getApplicationContext());
-        builder = new NotificationCompat.Builder(context.getApplicationContext(), CHANNEL_ID);
-        builder.setContentTitle("Rendering")
-                .setContentText("Rendering in progress")
-                //TODO update
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_LOW);
-        createNotificationChannel();
-
 // Issue the initial notification with zero progress
 
-        builder.setProgress(100, 1, true);
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
-
 // Do the job here that tracks the progress.
-
-        Renderer.proj=this;
         Constraints constraints;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             constraints = new Constraints.Builder()
@@ -592,58 +518,115 @@ public class VideoProj implements Serializable {
         }
 
         int num_of_workers=Runtime.getRuntime().availableProcessors()*2+4;
-        Renderer.progressRender=progressRender;
-        LastRenderer.progressRender=progressRender;
         int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
         if(frames_per_worker<=0) {
             num_of_workers=num_of_workers/4;
             if(num_of_workers<=0)num_of_workers=1;
             frames_per_worker=(int) (Math.floor((getLength()*1D)/num_of_workers)-1);
         }
-        inputs_from_last_render = new List[num_of_workers];
-        which_task_finished=new boolean[num_of_workers];
+        List<String>[] inputs_from_last_render = new List[num_of_workers];
+        boolean[] which_task_finished=new boolean[num_of_workers];
         if(progressRender!=null)progressRender.instantiateProgressesForRendering(num_of_workers);
         if(frames_per_worker<0) {
             Data.Builder b = new Data.Builder();
-            b.putInt(DATA_ID_RENDERER, 0);
-            b.putInt(DATA_ID_RENDERER_START, 0);
-            b.putInt(DATA_ID_RENDERER_END, -1);
+            b.putInt(numOfThisWorkerDataExtra, 0);
+            b.putInt(rendererWhenStartDataExtra, 0);
+            b.putInt(rendererWhenEndDataExtra, -1);
+            b.putInt(Renderer.countOfWorkersDataExtra,num_of_workers);
+            b.putInt(Renderer.projectLengthDataExtra,length);
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
                     .setConstraints(constraints)
                     .setInputData(b.build())
                     .build();
-            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render0", ExistingWorkPolicy.REPLACE, renderRequest);
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render0",
+                    ExistingWorkPolicy.REPLACE, renderRequest);
+            WorkManager.getInstance(context.getApplicationContext())
+                    .getWorkInfoByIdLiveData(renderRequest.getId())
+                    .observeForever(
+                            getObserverForRenderer(progressRender,renderRequest,inputs_from_last_render,which_task_finished));
         }else {
             for (int i = 0; i < num_of_workers; i++) {
                 Data.Builder b = new Data.Builder();
-                b.putInt(DATA_ID_RENDERER, i);
-                b.putInt(DATA_ID_RENDERER_START, i * frames_per_worker);
-                b.putInt(DATA_ID_RENDERER_END, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
+                b.putInt(numOfThisWorkerDataExtra, i);
+                b.putInt(rendererWhenStartDataExtra, i * frames_per_worker);
+                b.putInt(rendererWhenEndDataExtra, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
+                b.putInt(Renderer.countOfWorkersDataExtra,num_of_workers);
+                b.putInt(Renderer.projectLengthDataExtra,length);
+                try {
+                    b.putString(Renderer.renderTasksWithMatchingUriIdentifierPairsDataExtra,
+                            utils.writeByteArrayToTempFile(context, utils.marshall(RenderTaskWrapperWithUriIdentifierPairs.RenderTaskWrapperWithUriIdentifierPairsList
+                                    .from(renderTasksWithMatchingUriIdentifierPairs))).getPath());
+                }catch (IOException ignored){
+                }
                 OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
                         .setConstraints(constraints)
                         .setInputData(b.build())
                         .build();
                 WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render" + i, ExistingWorkPolicy.REPLACE, renderRequest);
+                WorkManager.getInstance(context.getApplicationContext())
+                        .getWorkInfoByIdLiveData(renderRequest.getId())
+                        .observeForever(getObserverForRenderer(progressRender,renderRequest,inputs_from_last_render,which_task_finished));
             }
         }
     }
 
-    synchronized void workFailed(int which_renderer){
-        which_task_finished[which_renderer]=true;
-        if(utils.areAllTrue(which_task_finished)) getWakeLock().release();
+    private Observer<WorkInfo> getObserverForRenderer(ProgressRender progressRender,
+                                                      OneTimeWorkRequest renderRequest,
+                                                      List<String>[] inputs_from_last_render,
+                                                      boolean[] which_task_finished){
+        return new Observer<WorkInfo>() {
+            @Override
+            public void onChanged(WorkInfo workInfo) {
+                if (workInfo != null) {
+                    Data progressD = workInfo.getState().isFinished() ? workInfo.getOutputData() : workInfo.getProgress();
+
+                    int whichRenderer=progressD.getInt(ProgressRender.progressRenderNumberOfRenderer,-1);
+                    int progress = progressD.getInt(ProgressRender.progressRenderState, -1);
+                    int max = progressD.getInt(ProgressRender.progressRenderMax, -1);
+                    boolean finished = progressD.getBoolean(ProgressRender.progressRenderFinished, false);
+                    boolean success=progressD.getBoolean(Renderer.dataSUCCES,false);
+                    ProgressRender.FunctionToCall functionToCall=ProgressRender.FunctionToCall.values()[progressD.getInt(ProgressRender.progressRenderFunctionToCall,ProgressRender.FunctionToCall.nothing.ordinal())];
+                    String resultString=progressD.getString(Renderer.dataExtraImagesFromThisRendererStringListFileName);
+                    if(progressRender!=null)switch (functionToCall){
+                        case nothing:break;
+                        case updateProgressOfSavingVideo:
+                            progressRender.updateProgressOfSavingVideo(progress,max,finished);
+                            break;
+                        case updateProgressOfX:
+                            if(whichRenderer!=-1)
+                                progressRender.updateProgressOfX(whichRenderer,progress,max,finished);
+                            break;
+                        case instantiateProgressesForRendering:
+                            if(whichRenderer!=-1)
+                                progressRender.instantiateProgressesForRendering(whichRenderer);
+                            break;
+                    }
+                    if (workInfo.getState().isFinished()) {
+                        WorkManager
+                                .getInstance(context.getApplicationContext())
+                                .getWorkInfoByIdLiveData(renderRequest.getId())
+                                .removeObserver(this);
+                        if(success && whichRenderer!=-1 && resultString!=null && !resultString.isEmpty()){
+                            try {
+                                inputs_from_last_render[whichRenderer]=
+                                        StringListParcelable.from(new File(resultString)).getStringList();
+                                which_task_finished[whichRenderer]=true;
+                                startLastRender(which_task_finished,inputs_from_last_render,progressRender);
+                            } catch (IOException e) {
+                                utils.LogE(e);
+                            }
+                        }else if(!success && whichRenderer!=-1){
+                            which_task_finished[whichRenderer]=true;
+                            progressRender.xFailed(whichRenderer);
+                        }
+                    }
+                }
+            }
+        };
     }
 
-    synchronized void startLastRender(int which_renderer){
-        which_task_finished[which_renderer]=true;
-        LastRenderer.proj=this;
+    synchronized void startLastRender(boolean[] which_task_finished,List<String>[] inputs_from_last_render,ProgressRender progressRender) throws IOException {
         if(utils.areAllTrue(which_task_finished)){
-            try {
-                getWakeLock().release();
-            }catch (Exception e){
-                utils.LogE("Ignore this",e);
-            }
-
-            Renderer.proj=this;
             Constraints constraints;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 constraints = new Constraints.Builder()
@@ -658,10 +641,47 @@ public class VideoProj implements Serializable {
                         .build();
             }
 
+            Data inputData=new Data.Builder()
+                    .putByteArray(LastRenderer.fpsDataExtra,utils.marshall(fps))
+                    .putString(LastRenderer.fileNameDataExtra,output)
+                    .putString(LastRenderer.realListFileStorageDataExtra,StringListParcelable.from(
+                            LastRenderer.getRealList(inputs_from_last_render)).saveToFile(context)
+                            .getPath())
+                    .putString(LastRenderer.uriIdentifierPairListFileStorageDataExtra,
+                            utils.writeByteArrayToTempFile(context,
+                                    utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(
+                                            rendererTimeLine.getUriIdentifierPairs()))).getPath())
+                    .build();
+
+
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(LastRenderer.class)
                     .setConstraints(constraints)
+                    .setInputData(inputData)
                     .build();
-            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render", ExistingWorkPolicy.REPLACE, renderRequest);
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Export", ExistingWorkPolicy.REPLACE, renderRequest);
+            WorkManager.getInstance(context.getApplicationContext())
+                    .getWorkInfoByIdLiveData(renderRequest.getId())
+                    .observeForever(new Observer<WorkInfo>() {
+                        @Override
+                        public void onChanged(WorkInfo workInfo) {
+                            if (workInfo != null) {
+                                Data progressD = workInfo.getState().isFinished() ? workInfo.getOutputData() : workInfo.getProgress();
+                                int progress = progressD.getInt(ProgressRender.progressRenderState, -11);
+                                int max = progressD.getInt(ProgressRender.progressRenderMax, -11);
+                                boolean finished=progressD.getBoolean(ProgressRender.progressRenderFinished,false);
+                                boolean failed=progressD.getBoolean(LastRenderer.keyFailedExtraData,false);
+                                if (progress != -11 && max != -11) {
+                                    progressRender.updateProgressOfSavingVideo(progress,max,finished);
+                                }
+                                if (workInfo.getState().isFinished()) {
+                                    if(failed){
+                                        progressRender.exportFailed();
+                                    }
+                                    WorkManager.getInstance(context.getApplicationContext()).getWorkInfoByIdLiveData(renderRequest.getId()).removeObserver(this);
+                                }
+                            }
+                        }
+                    });
         }
     }
 
@@ -678,37 +698,6 @@ public class VideoProj implements Serializable {
     public double getLength_seconds() {
         return length_seconds;
     }
-
-    void setNotificationProgress(int max, int progress, boolean finsih){
-        if(!finsih){
-            builder.setProgress(max, progress, false);
-        }else{
-            builder.setContentText("Rendering complete")
-                    .setProgress(0,0,false);
-        }
-        notificationManager.notify(NOTIFICATION_ID, builder.build());
-    }
-
-    PowerManager.WakeLock getWakeLock() {
-        return wakeLock;
-    }
-
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Render Channel";
-            String description = "Render Video";
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
 
     /**
      * Render a Frame at a Given Position. You must call <code>VideoProj#preRender</code> before. Because you can return Multiple Bitmaps in a {@link RenderTask}, this returns a List.

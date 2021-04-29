@@ -37,6 +37,8 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import org.jcodec.api.FrameGrab;
 import org.jcodec.api.JCodecException;
 import org.jcodec.api.PictureWithMetadata;
@@ -308,11 +310,13 @@ public class utils {
     }
 
     /**
-     * Reads a File to an object implementing parcelable
+     * Reads a File to an object implementing parcelable.
+     * This should only used with temp files, because {@link Parcel} is not Designed for usage with multiple Versions of the Platform.
      * @param file The file
      * @param creator The Creator of the wanted Object
      * @return The Object
      * @throws IOException IOException thrown by inner methods
+     * @see utils#writeByteArrayToTempFile(Context, byte[])
      */
     public static <T extends Parcelable> T getParcelableFromTempFile(File file,Parcelable.Creator<T> creator) throws IOException {
         int size = (int) file.length();
@@ -322,12 +326,12 @@ public class utils {
         return unmarshal(bytes, creator);
     }
     //From https://gist.github.com/omarmiatello/6711967
-    public static <T extends Parcelable> T unmarshal(byte[] bytes, Parcelable.Creator<T> creator) {
+    public static <T extends Parcelable> T unmarshal(@NonNull byte[] bytes, Parcelable.Creator<T> creator) {
         Parcel parcel = unmarshal(bytes);
         return creator.createFromParcel(parcel);
     }
     //From https://gist.github.com/omarmiatello/6711967
-    public static Parcel unmarshal(byte[] bytes) {
+    public static Parcel unmarshal(@NonNull byte[] bytes) {
         Parcel parcel = Parcel.obtain();
         parcel.unmarshall(bytes, 0, bytes.length);
         parcel.setDataPosition(0); // this is extremely important!

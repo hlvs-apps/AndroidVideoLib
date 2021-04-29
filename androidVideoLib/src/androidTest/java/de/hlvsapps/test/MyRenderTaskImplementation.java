@@ -37,6 +37,11 @@ public class MyRenderTaskImplementation implements RenderTask, Parcelable {
     public List<Bitmap> render(List<VideoBitmap> bitmaps0, List<VideoBitmap> bitmaps1, int frameInProject) {
         Bitmap bitmap0 = null, bitmap1 = null;
         utils.LogD("RUN");
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         for (VideoBitmap bitmap : bitmaps0) {
             if (bitmap.getIdentifier().equals("Test"))
                 bitmap0 = bitmap.getBitmap();

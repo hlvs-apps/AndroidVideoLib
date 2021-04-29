@@ -20,45 +20,115 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
+import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
+import androidx.work.Data;
+import androidx.work.ForegroundInfo;
+import androidx.work.WorkManager;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.content.Context.POWER_SERVICE;
 
+/**
+ * <p>{@link Worker} implementation to Render your final Video to Images</p>
+ * @see VideoProj#renderInTo(String, ProgressRender)
+ * @author hlvs-apps
+ */
 public class Renderer extends Worker {
 
     static final String startOfFileName="VIDEO_EXPORT_NAME_ExternalExportStorage_VIDEORenderer";
 
-    static VideoProj proj;
+    public static final String dataExtraImagesFromThisRendererStringListFileName="dataExtraImagesFromThisRendererStringListFileName";
 
-    static ProgressRender progressRender=null;
+    public static final String dataSUCCES ="dataSUCCES";
 
+    public static final String countOfWorkersDataExtra ="countOfWorkersDataExtra";
+    public static final String numOfThisWorkerDataExtra ="numOfThisWorkerDataExtra";
+    public static final String rendererWhenStartDataExtra ="rendererWhenStartDataExtra";
+    public static final String rendererWhenEndDataExtra ="rendererWhenEndDataExtra";
+    public static final String projectLengthDataExtra="projectLengthDataExtra";
+    public static final String renderTasksWithMatchingUriIdentifierPairsDataExtra="renderTasksWithMatchingUriIdentifierPairsDataExtra";
+
+    public static final int NOTIFICATION_ID =1037;//Plus num_of_workers next 1200
+    public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
+    public static final String END_OF_WAKE_LOCK_ID="::RenderLock";
+
+    private final String WAKE_LOCK_ID;
+
+    private final Context context;
+
+    private final int which_renderer;
+    private final int from;
+    private final int to;
+    private final int count_of_workers;
+    private final int project_length;
+    private final List<RenderTaskWrapperWithUriIdentifierPairs> renderTaskWrapperWithUriIdentifierPairs;
     public Renderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
+        WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
+        Data inputData=workerParams.getInputData();
+        which_renderer = inputData.getInt(numOfThisWorkerDataExtra, -1);
+        from = inputData.getInt(rendererWhenStartDataExtra, -2);
+        to = inputData.getInt(rendererWhenEndDataExtra, -2);
+        count_of_workers = inputData.getInt(countOfWorkersDataExtra,0);
+        project_length = inputData.getInt(projectLengthDataExtra,-1);
+        this.context=context;
+        final String origin=inputData.getString(renderTasksWithMatchingUriIdentifierPairsDataExtra);
+        List<RenderTaskWrapperWithUriIdentifierPairs> renderTaskWrapperWithUriIdentifierPairs1;
+        if(origin==null){
+            renderTaskWrapperWithUriIdentifierPairs1 =new ArrayList<>();
+        }else {
+            try {
+                renderTaskWrapperWithUriIdentifierPairs1 = utils.getParcelableFromTempFile(new File(origin), RenderTaskWrapperWithUriIdentifierPairs.RenderTaskWrapperWithUriIdentifierPairsList.CREATOR).getPairs();
+            } catch (IOException e) {
+                utils.LogE(e);
+                renderTaskWrapperWithUriIdentifierPairs1 = new ArrayList<>();
+            }
+        }
         //this.proj=proj;
+        renderTaskWrapperWithUriIdentifierPairs = renderTaskWrapperWithUriIdentifierPairs1;
     }
 
 
     @NotNull
     public Result doWork() {
-        if (proj != null) {
-            try {
-                return renderSynchronus();
+        //Enable Wakelook
+        PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
+        wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
+
+        setNotificationProgress(1,0);
+
+        try {
+                return renderSynchronous();
             } catch (Exception e) {
                 utils.LogE(e);
-                return Result.failure();
+                return Result.failure((new Data.Builder())
+                        .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer==-1?0:which_renderer)
+                        .putBoolean(dataSUCCES,false)
+                        .build());
             }
-        } else {
-            return Result.failure();
+        finally {
+            wakeLock.release();
         }
     }
 
@@ -68,29 +138,38 @@ public class Renderer extends Worker {
     }
 
 
-    private synchronized Result renderSynchronus() {
-        int which_renderer=-1;
+    private Result renderSynchronous() {
         try {
             utils.LogI("Render");
-            which_renderer = getInputData().getInt(VideoProj.DATA_ID_RENDERER, -1);
-            //RenderTaskWrapperWithUriIdentifierPairs wrapper=proj.getRendererTimeLine().getRenderTasksWithMatchingUriIdentifierPairs(proj).get(which_renderer);
-            //int from=wrapper.getFrameInProjectFrom();
-            //int to=wrapper.getFrameInProjectTo();
-            int from = getInputData().getInt(VideoProj.DATA_ID_RENDERER_START, -2);
-            int to = getInputData().getInt(VideoProj.DATA_ID_RENDERER_END, -2);
-            if (from == -2 || to == -2 || which_renderer == -1) return Result.failure();
+            int to=this.to;
+            if (from == -2 || to == -2 || which_renderer == -1 || project_length == -1) {
+                utils.LogW("Worker Failed Because of not Matching Values. from="+from+"; which_renderer="+which_renderer+"; project_length="+project_length);
+                return Result.failure((new Data.Builder())
+                        .putInt(ProgressRender.progressRenderNumberOfRenderer, which_renderer == -1 ? 0 : which_renderer)
+                        .putBoolean(dataSUCCES, false)
+                        .build());
+            }
             utils.LogD("From: " + from);
             utils.LogD("To1: " + to);
-            if (to == -1) to = proj.getLength();
+            if (to == -1) to = project_length;
             utils.LogD("To2: " + to);
-            proj.inputs_from_last_render[which_renderer] = new ArrayList<>();
             int actual_num_of_saved_image = 0;
             int max = to - from;
+            List<String> inputs_from_this_render=new ArrayList<>(max*2);
             for (int i = from; i < to; i++) {
                 int actual_state = i - from;
-                if (progressRender != null)
-                    progressRender.updateProgressOfX(which_renderer, actual_state, max, false);
-                for (RenderTaskWrapperWithUriIdentifierPairs wrapper : proj.getRenderTasksWithMatchingUriIdentifierPairs()) {
+                utils.LogI(String.valueOf(actual_state));
+                setProgressAsync((new Data.Builder())
+                        .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer)
+                        .putInt(ProgressRender.progressRenderState,actual_state)
+                        .putInt(ProgressRender.progressRenderMax,max)
+                        .putBoolean(ProgressRender.progressRenderFinished,false)
+                        .putInt(ProgressRender.progressRenderFunctionToCall,ProgressRender.FunctionToCall.updateProgressOfX.ordinal())
+                        .putString(dataExtraImagesFromThisRendererStringListFileName,"")
+                        .build()
+                );
+                setNotificationProgress(max,actual_state);
+                for (RenderTaskWrapperWithUriIdentifierPairs wrapper : renderTaskWrapperWithUriIdentifierPairs) {
                     if (i >= wrapper.getFrameInProjectFrom()) {
                         List<VideoBitmap> bitmap0 = new ArrayList<>();
                         List<VideoBitmap> bitmap1 = new ArrayList<>();
@@ -98,12 +177,12 @@ public class Renderer extends Worker {
                             String fileName = p.getUriIdentifier().getIdentifier();
                             int i_for_video = i - p.getFrameStartInProject();
                             bitmap0.add(new VideoBitmap(
-                                    utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
+                                    utils.readFromExternalStorage(context, fileName + i_for_video), p.getUriIdentifier()));
                             utils.LogD("Input: "+fileName + i_for_video);
                             i_for_video++;
-                            if ((proj.inputs_from_last_render.length == (which_renderer + 1)) ? (i + 1) < to : (i + 1) <= to) {
+                            if ((count_of_workers == (which_renderer + 1)) ? (i + 1) < to : (i + 1) <= to) {
                                 bitmap1.add(new VideoBitmap(
-                                        utils.readFromExternalStorage(proj.getContext(), fileName + i_for_video), p.getUriIdentifier()));
+                                        utils.readFromExternalStorage(context, fileName + i_for_video), p.getUriIdentifier()));
                                 //utils.LogD(fileName + i_for_video);
                             } else {
                                 bitmap1.add(new VideoBitmap(
@@ -122,12 +201,12 @@ public class Renderer extends Worker {
                                         if (id1 == null && id2 == null) {
                                             fileOutName = startOfFileName+ which_renderer + "_" + actual_num_of_saved_image;
                                             utils.LogD("Output: "+fileOutName);
-                                            utils.saveToExternalStorage(bitmap, proj.getContext(), fileOutName);
+                                            utils.saveToExternalStorage(bitmap, context, fileOutName);
                                         } else {
                                             fileOutName = id1 != null ? id1 + i : id2 + (i + 1);
                                             utils.LogD("Output: "+fileOutName);
                                         }
-                                        proj.inputs_from_last_render[which_renderer].add(fileOutName);
+                                        inputs_from_this_render.add(fileOutName);
                                         actual_num_of_saved_image++;
                                     }
                                 } catch (NullPointerException ignored) {
@@ -140,14 +219,71 @@ public class Renderer extends Worker {
                 }
             }
 
-            if (progressRender != null)
-                progressRender.updateProgressOfX(which_renderer, 1, 1, true);
-            proj.startLastRender(which_renderer);
-            return Result.success();
+            return Result.success((new Data.Builder())
+                    .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer)
+                    .putInt(ProgressRender.progressRenderState,1)
+                    .putInt(ProgressRender.progressRenderMax,1)
+                    .putBoolean(ProgressRender.progressRenderFinished,true)
+                    .putInt(ProgressRender.progressRenderFunctionToCall,ProgressRender.FunctionToCall.updateProgressOfX.ordinal())
+                    .putString(dataExtraImagesFromThisRendererStringListFileName,StringListParcelable.from(inputs_from_this_render).saveToFile(context).getPath())
+                    .putBoolean(dataSUCCES,true)
+                    .build());
         }catch (Exception e){
             utils.LogE(e);
-            if(which_renderer!=-1) proj.workFailed(which_renderer);
-            return Result.failure();
+            return Result.failure((new Data.Builder())
+                    .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer)
+                    .putBoolean(dataSUCCES,false)
+                    .build());
         }
+    }
+
+    @NonNull
+    private ForegroundInfo createForegroundInfo(int progress, int max) {
+        // Build a notification using bytesRead and contentLength
+
+        Context context = getApplicationContext();
+        String title = (MessageFormat.format(context.getString(R.string.rendering_on_worker_x), which_renderer));
+        String cancel = context.getString(R.string.cancel);
+        // This PendingIntent can be used to cancel the worker
+        PendingIntent intent = WorkManager.getInstance(context)
+                .createCancelPendingIntent(getId());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createChannel();
+        }
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setContentTitle(title)
+                .setTicker(title)
+                .setChannelId(CHANNEL_ID)
+                .setNotificationSilent()
+                .setOnlyAlertOnce(true)
+                .setSmallIcon(R.drawable.ic_baseline_group_work_24)
+                .setProgress(max, progress, false)
+                .setOngoing(true)
+                // Add the cancel action to the notification which can
+                // be used to cancel the worker
+                .addAction(android.R.drawable.ic_delete, cancel, intent);
+
+
+        return new ForegroundInfo(NOTIFICATION_ID+which_renderer,notificationBuilder.build());
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createChannel() {
+        CharSequence name = context.getString(R.string.renderChannelName);
+        String description = context.getString(R.string.importingVideos);
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+
+    private void setNotificationProgress(int max, int progress){
+        setForegroundAsync(createForegroundInfo(progress,max));
     }
 }

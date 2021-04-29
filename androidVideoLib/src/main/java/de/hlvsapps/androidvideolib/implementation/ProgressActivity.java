@@ -18,7 +18,7 @@
  - limitations under the License.                                             -
  -----------------------------------------------------------------------------*/
 
-package de.hlvsapps.androidvideolib;
+package de.hlvsapps.androidvideolib.implementation;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -34,14 +34,17 @@ import android.widget.TableLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_FINISHED;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_MAX_PROGRESS;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_PROGRESS;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.broadcastToReceiveAction;
-import static de.hlvsapps.androidvideolib.SendProgressAsBroadcast.intentExtraBroadcastToReceiveAction;
+import de.hlvsapps.androidvideolib.R;
+import de.hlvsapps.androidvideolib.VideoProj;
+
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_FINISHED;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_MAX_PROGRESS;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.INTENT_EXTRA_DATA_NAME_PROGRESS;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.broadcastToReceiveAction;
+import static de.hlvsapps.androidvideolib.implementation.SendProgressAsBroadcast.intentExtraBroadcastToReceiveAction;
 
 
 /**

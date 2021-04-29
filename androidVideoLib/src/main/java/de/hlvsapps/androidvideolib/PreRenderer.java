@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static android.content.Context.POWER_SERVICE;
-import static de.hlvsapps.androidvideolib.VideoProj.END_OF_WAKE_LOCK_ID;
 
 /**
  * <p>{@link Worker} implementation to save the Pictures of the Videos contained in {@link de.hlvsapps.androidvideolib.UriIdentifierPair.UriIdentifierPairList}</p>
@@ -111,6 +110,7 @@ public class PreRenderer extends Worker {
     public static final String CHANNEL_ID = "CHANNEL_ID_PRE_RENDER";
 
     private final String WAKE_LOCK_ID;
+    public static final String END_OF_WAKE_LOCK_ID="::PreRenderLock";
 
     //private NotificationManagerCompat notificationManager;
     //private NotificationCompat.Builder builder;
@@ -123,9 +123,13 @@ public class PreRenderer extends Worker {
         this.context=context;
         WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
         Data inputData=workerParams.getInputData();
-        workList = utils.unmarshal(inputData.getByteArray(parcelableByteArrayListUriIdentifierPair), UriIdentifierPair.UriIdentifierPairList.CREATOR).getPairs();
         scaleFactor= SerializationUtils.deserialize(inputData.getByteArray(serializableByteArrayScaleFactor));
-
+        byte[] temp=inputData.getByteArray(parcelableByteArrayListUriIdentifierPair);
+        if(temp==null){
+            workList=new ArrayList<>();
+            return;
+        }
+        workList = utils.unmarshal(temp, UriIdentifierPair.UriIdentifierPairList.CREATOR).getPairs();
         //this.proj=proj;
     }
 
@@ -140,7 +144,7 @@ public class PreRenderer extends Worker {
     }
 
 
-    private synchronized Result preRender() {
+    private Result preRender() {
         //Enable Wakelook
         PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
         final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
@@ -244,14 +248,17 @@ public class PreRenderer extends Worker {
             }catch (Exception ignored){}
             throw e;
         }
-        setNotificationProgress(1, 1, true);
-        setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState,1)
-                .putInt(ProgressPreRender.progressPreRenderMax,1)
-                .putBoolean(ProgressPreRender.progressPreRenderFinished,true)
-                .build());
-        //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
-        wakeLock.release();
-        return Result.success();
+        try {
+            setNotificationProgress(1, 1, true);
+            setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState, 1)
+                    .putInt(ProgressPreRender.progressPreRenderMax, 1)
+                    .putBoolean(ProgressPreRender.progressPreRenderFinished, true)
+                    .build());
+            //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
+            return Result.success();
+        }finally {
+            wakeLock.release();
+        }
     }
 
     @NonNull
@@ -395,4 +402,62 @@ public class PreRenderer extends Worker {
         }
     }
 
+    /**
+     * Interface for Updating Progress while Pre Rendering
+     *
+     * @author hlvs-apps
+     */
+    public interface ProgressPreRender {
+        String progressPreRenderState="progressPreRenderState";
+        String progressPreRenderMax="progressPreRenderMax";
+        String progressPreRenderFinished="progressPreRenderFinished";
+
+        /**
+         * Used to Update The Progress while PreRendering
+         * @param state The actual state
+         * @param max The max State
+         * @param finished Finished?
+         */
+        void updateProgress(int state,int max,boolean finished);
+
+        /**
+         * Pre Rendering Failed
+         */
+        void failed();
+    }
+
+    public static class SortedPicture implements Comparable<SortedPicture> {
+        private final double timestamp;
+        private final Bitmap bitmap;
+        private final double duration;
+
+        public double getTimestamp() {
+            return timestamp;
+        }
+
+        public double getTimestampPlusDuration(){
+            return timestamp+duration;
+        }
+
+        public Bitmap getBitmap() {
+            return bitmap;
+        }
+
+        public SortedPicture(double timestamp, Bitmap bitmap, double duration) {
+            this.duration=duration;
+            this.bitmap = bitmap;
+            this.timestamp = timestamp;
+        }
+
+        public boolean doesTimeStampPlusDurationBeforeEqualThisTimeStamp(double valueBeforeThis){
+            final int diff= (int) ((valueBeforeThis-timestamp)*1000D);
+            return (1>=diff) && (diff >= -1);
+        }
+
+        @Override
+        public int compareTo(SortedPicture other) {
+            return (int) ((timestamp-other.getTimestamp())*100000D);
+        }
+
+    }
 }

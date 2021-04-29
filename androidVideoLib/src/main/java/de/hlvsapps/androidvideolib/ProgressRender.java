@@ -20,15 +20,45 @@
 
 package de.hlvsapps.androidvideolib;
 
+import android.os.Parcel;
 import android.os.Parcelable;
 
 /**
  * Interface for Updating progress while Rendering.
  * While Rendering, you need x+1 views, x for the Tasks while Rendering, 1 for the Last Task, Saving the Video
- *
  * @author hlvs-apps
  */
-public interface ProgressRender extends Parcelable {
+public interface ProgressRender {
+    String progressRenderState="progressRenderState";
+    String progressRenderMax="progressRenderMax";
+    String progressRenderFinished="progressRenderFinished";
+    String progressRenderNumberOfRenderer="progressRenderNumberOfRenderer";
+    String progressRenderFunctionToCall ="functionToCall";
+    enum FunctionToCall implements Parcelable {
+        instantiateProgressesForRendering,updateProgressOfX,updateProgressOfSavingVideo,nothing;
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeInt(ordinal());
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        public static final Creator<FunctionToCall> CREATOR = new Creator<FunctionToCall>() {
+            @Override
+            public FunctionToCall createFromParcel(Parcel in) {
+                return FunctionToCall.values()[in.readInt()];
+            }
+
+            @Override
+            public FunctionToCall[] newArray(int size) {
+                return new FunctionToCall[size];
+            }
+        };
+    }
+
     /**
      * Instantiate x views
      * @param num x views
@@ -45,6 +75,12 @@ public interface ProgressRender extends Parcelable {
     void updateProgressOfX(int num,int progress,int max,boolean finished);
 
     /**
+     * Render Task X Failed
+     * @param num x
+     */
+    void xFailed(int num);
+
+    /**
      * Update the Progress of Video Saving
      *
      * @param progress the progress
@@ -52,4 +88,9 @@ public interface ProgressRender extends Parcelable {
      * @param finished finished?true:false
      */
     void updateProgressOfSavingVideo(int progress, int max, boolean finished);
+
+    /**
+     * Exporting Video Failed
+     */
+    void exportFailed();
 }

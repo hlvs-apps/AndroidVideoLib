@@ -18,7 +18,7 @@
  - limitations under the License.                                             -
  -----------------------------------------------------------------------------*/
 
-package de.hlvsapps.androidvideolib;
+package de.hlvsapps.androidvideolib.implementation;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -35,9 +35,14 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.hlvsapps.androidvideolib.LastRenderer;
+import de.hlvsapps.androidvideolib.PreRenderer;
+import de.hlvsapps.androidvideolib.ProgressRender;
+import de.hlvsapps.androidvideolib.utils;
+
 
 /**
- * Use this class for easier handling Progress Updates of {@link ProgressRender} and {@link ProgressPreRender}.
+ * Use this class for easier handling Progress Updates of {@link ProgressRender} and {@link PreRenderer.ProgressPreRender}.
  * Look at the Implemented Methods for the Variables you can receive.<br>
  * These Methods are: {@link SendProgressAsBroadcast#updateProgress(int, int, boolean)}, {@link SendProgressAsBroadcast#instantiateProgressesForRendering(int)}, {@link SendProgressAsBroadcast#updateProgressOfX(int, int, int, boolean)},
  * {@link SendProgressAsBroadcast#updateProgressOfSavingVideo(int, int, boolean)}.<br>
@@ -48,7 +53,7 @@ import java.util.List;
  *
  * @author hlvs-apps
  */
-public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender, Closeable, Parcelable {
+public class SendProgressAsBroadcast implements ProgressRender, PreRenderer.ProgressPreRender, Closeable, Parcelable {
 
     /**
      * Intent Extra Data Name for the Method currently sending Broadcast. The Possible Options are specified in {@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED}
@@ -154,7 +159,7 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
     }
 
     /**
-     * Method called from {@link ProgressPreRender}.<br>
+     * Method called from {@link PreRenderer.ProgressPreRender}.<br>
      * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
      * This Broadcast will contain following Parameters:<br>
      * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_PROGRESS}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_MAX_PROGRESS} and {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_FINISHED}
@@ -175,7 +180,25 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
     }
 
     /**
-     * Method called from {@link ProgressPreRender}.<br>
+     * Method called from {@link PreRenderer.ProgressPreRender}.<br>
+     * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
+     * This Broadcast will contain following Parameters:<br>
+     * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}
+     */
+    @Override
+    public void failed() {
+        Intent intent = new Intent();
+        intent.setAction(intentFilterAction);
+        intent.putExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED, INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED.preRenderFailed);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
+    /**
+     * Method called from {@link ProgressRender}.<br>
      * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
      * This Broadcast will contain following Parameters:<br>
      * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}and  {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NUM_FOR_INSTANTIATE}
@@ -191,7 +214,7 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
     }
 
     /**
-     * Method called from {@link ProgressPreRender}.<br>
+     * Method called from {@link ProgressRender}.<br>
      * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
      * This Broadcast will contain following Parameters:<br>
      * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_PROGRESS},
@@ -214,7 +237,26 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
     }
 
     /**
-     * Method called from {@link ProgressPreRender}.<br>
+     * Method called from {@link ProgressRender}.<br>
+     * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
+     * This Broadcast will contain following Parameters:<br>
+     * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE}.
+     */
+    @Override
+    public void xFailed(int num) {
+        Intent intent = new Intent();
+        intent.setAction(intentFilterAction);
+        intent.putExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED, INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED.xFailed);
+        intent.putExtra(INTENT_EXTRA_DATA_NAME_NUM_TO_UPDATE,num);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
+    /**
+     * Method called from {@link LastRenderer}.<br>
      * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
      * This Broadcast will contain following Parameters:<br>
      * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_PROGRESS}, {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_MAX_PROGRESS} and
@@ -228,6 +270,24 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
         intent.putExtra(INTENT_EXTRA_DATA_NAME_PROGRESS,progress);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_MAX_PROGRESS,max);
         intent.putExtra(INTENT_EXTRA_DATA_NAME_FINISHED,finished);
+        if(record) {
+            if(intentsSent==null)intentsSent=new ArrayList<>();
+            intentsSent.add(intent);
+        }
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
+    }
+
+    /**
+     * Method called from {@link LastRenderer}.<br>
+     * This will fire a Broadcast with your Context and intentAction, both set in {@link SendProgressAsBroadcast#SendProgressAsBroadcast(Context)}.<br>
+     * This Broadcast will contain following Parameters:<br>
+     * {@link SendProgressAsBroadcast#INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED}
+     */
+    @Override
+    public void exportFailed() {
+        Intent intent = new Intent();
+        intent.setAction(intentFilterAction);
+        intent.putExtra(INTENT_EXTRA_DATA_NAME_NAME_OF_METHOD_CALLED, INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED.lastRenderFailed);
         if(record) {
             if(intentsSent==null)intentsSent=new ArrayList<>();
             intentsSent.add(intent);
@@ -297,12 +357,13 @@ public class SendProgressAsBroadcast implements ProgressRender,ProgressPreRender
      * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#renderInstantiateProgressForRendering}</td><td>for</td></td><td> {@link SendProgressAsBroadcast#instantiateProgressesForRendering(int)}.</td></tr>
      * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#renderUpdateProgressOfX}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#updateProgressOfX(int, int, int, boolean)}.</td></tr>
      * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#lastRenderUpdateProgressOfSavingVideo}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#updateProgressOfSavingVideo(int, int, boolean)}.</td></tr>
+     * <tr><td>{@link INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED#xFailed}</td><td>for</td></td></td> {@link SendProgressAsBroadcast#xFailed(int)}.</td></tr>
      * </table>
      *
      * @see SendProgressAsBroadcast
      */
     public enum INTENT_EXTRA_DATA_VALUE_NAME_OF_METHOD_CALLED{
-        preRenderUpdateProgress,renderInstantiateProgressForRendering,renderUpdateProgressOfX,lastRenderUpdateProgressOfSavingVideo
+        preRenderUpdateProgress,preRenderFailed,renderInstantiateProgressForRendering,renderUpdateProgressOfX,xFailed,lastRenderUpdateProgressOfSavingVideo,lastRenderFailed
     }
 
     /**

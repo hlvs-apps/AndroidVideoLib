@@ -35,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Collections;
 
+import de.hlvsapps.androidvideolib.PreRenderer;
 import de.hlvsapps.androidvideolib.R;
 import de.hlvsapps.androidvideolib.RenderTaskWrapper;
 import de.hlvsapps.androidvideolib.UriIdentifier;
@@ -153,12 +154,22 @@ public class video_test extends AppCompatActivity {
             videoProj.preRender(() -> {
                 videoProj.startRenderActivityAndRenderInTo();
                 runOnUiThread(() -> {
-                    Bitmap img=utils.readFromExternalStorage(this,"Test0");
+                    Bitmap img = utils.readFromExternalStorage(this, "Test0");
                     imageView.setImageBitmap(img);
                     next.setVisibility(View.VISIBLE);
                     before.setVisibility(View.VISIBLE);
                 });
-            }, (state, max, finished) -> updateState(state,max));
+            }, new PreRenderer.ProgressPreRender() {
+                @Override
+                public void updateProgress(int state, int max, boolean finished) {
+                    updateState(state,max);
+                }
+
+                @Override
+                public void failed() {
+
+                }
+            });
         }
     }
 }
