@@ -16,7 +16,7 @@ and
 
 ```
 	dependencies {
-	        implementation 'com.github.hlvs-apps:AndroidVideoLib:v0.1.0-beta'
+	        implementation 'com.github.hlvs-apps:AndroidVideoLib:0.2.0-beta'
 	}
 ```
 ## Contributing
