@@ -72,6 +72,9 @@ public class LastRenderer extends Worker {
     public static final String realListFileStorageDataExtra="realListFileStorageDataExtra";
     private final List<String> realList;
 
+    public static final String VIDEO_FOLDER_NAME_DATA_EXTRA="VIDEO_FOLDER_NAME_DATA_EXTRA";
+    private final String VIDEO_FOLDER_NAME;
+
     public static final String uriIdentifierPairListFileStorageDataExtra
             ="uriIdentifierPairListFileStorageDataExtra";
     private final List<UriIdentifierPair> uriIdentifierPairList;
@@ -88,6 +91,7 @@ public class LastRenderer extends Worker {
         WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
         this.context=context;
         Data inputData=workerParams.getInputData();
+        this.VIDEO_FOLDER_NAME=inputData.getString(VIDEO_FOLDER_NAME_DATA_EXTRA);
         this.fps=utils.unmarshal(inputData.getByteArray(fpsDataExtra),Rational.CREATOR);
         this.fileName=inputData.getString(fileNameDataExtra);
         List<String> realList;
@@ -145,7 +149,7 @@ public class LastRenderer extends Worker {
         FileOutputStream stream1=null;
         ParcelFileDescriptor d=null;
         try {
-            List<Object> re = utils.fileOutputStreamFromName(context, fileName);
+            List<Object> re = utils.fileOutputStreamFromName(context, fileName,VIDEO_FOLDER_NAME);
             stream1 = (FileOutputStream) re.get(0);
             d= (ParcelFileDescriptor) re.get(1);
             ch = new FileChannelWrapper(stream1.getChannel());

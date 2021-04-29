@@ -23,7 +23,6 @@ package de.hlvsapps.androidvideolib;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -65,18 +64,7 @@ public class VideoSegmentWithTime extends VideoSegment implements Parcelable {
     }
 
     protected VideoSegmentWithTime(Parcel in) {
-        this(readParts(in),in.readInt());
-    }
-
-    private static List<UriIdentifier> readParts(Parcel in){
-        ArrayList<UriIdentifier> parts;
-        if (in.readByte() == 0x01) {
-            parts = new ArrayList<UriIdentifier>();
-            in.readList(parts, UriIdentifier.class.getClassLoader());
-        } else {
-            parts = null;
-        }
-        return parts;
+        this(in.createTypedArrayList(UriIdentifier.CREATOR),in.readInt());
     }
 
     @Override
@@ -86,12 +74,7 @@ public class VideoSegmentWithTime extends VideoSegment implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        if (parts == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(parts);
-        }
+        dest.writeTypedList(parts);
         dest.writeInt(startTimeInPart);
     }
 

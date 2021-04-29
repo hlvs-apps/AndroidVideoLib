@@ -169,18 +169,8 @@ public class RendererTimeLine implements Parcelable {
 
 
     protected RendererTimeLine(Parcel in) {
-        if (in.readByte() == 0x01) {
-            uriIdentifierPairs = new ArrayList<UriIdentifierPair>();
-            in.readList(uriIdentifierPairs, UriIdentifierPair.class.getClassLoader());
-        } else {
-            uriIdentifierPairs = null;
-        }
-        if (in.readByte() == 0x01) {
-            renderTaskWrappers = new ArrayList<RenderTaskWrapper>();
-            in.readList(renderTaskWrappers, RenderTaskWrapper.class.getClassLoader());
-        } else {
-            renderTaskWrappers = null;
-        }
+        uriIdentifierPairs = in.createTypedArrayList(UriIdentifierPair.CREATOR);
+        renderTaskWrappers = in.createTypedArrayList(RenderTaskWrapper.CREATOR);
         videoLengthInFrames = in.readInt();
         videoLengthInSeconds = in.readDouble();
     }
@@ -192,23 +182,13 @@ public class RendererTimeLine implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        if (uriIdentifierPairs == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(uriIdentifierPairs);
-        }
-        if (renderTaskWrappers == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(renderTaskWrappers);
-        }
+        dest.writeTypedList(uriIdentifierPairs);
+        dest.writeTypedList(renderTaskWrappers);
         dest.writeInt(videoLengthInFrames);
         dest.writeDouble(videoLengthInSeconds);
     }
 
-    public static final Parcelable.Creator<RendererTimeLine> CREATOR = new Parcelable.Creator<RendererTimeLine>() {
+    public static final Creator<RendererTimeLine> CREATOR = new Creator<RendererTimeLine>() {
         @Override
         public RendererTimeLine createFromParcel(Parcel in) {
             return new RendererTimeLine(in);

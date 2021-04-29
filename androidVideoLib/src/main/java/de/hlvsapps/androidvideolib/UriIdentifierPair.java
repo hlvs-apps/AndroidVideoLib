@@ -23,7 +23,6 @@ package de.hlvsapps.androidvideolib;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -39,6 +38,47 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
         this.uriIdentifier=uriIdentifier;
         this.frameStartInProject=frameStartInProject;
     }
+
+    protected UriIdentifierPair(Parcel in) {
+        uriIdentifier = in.readParcelable(UriIdentifier.class.getClassLoader());
+        if (in.readByte() == 0) {
+            frameStartInProject = null;
+        } else {
+            frameStartInProject = in.readInt();
+        }
+        lengthInFrames = in.readInt();
+        lengthInSeconds = in.readDouble();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeParcelable(uriIdentifier, flags);
+        if (frameStartInProject == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeInt(frameStartInProject);
+        }
+        dest.writeInt(lengthInFrames);
+        dest.writeDouble(lengthInSeconds);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<UriIdentifierPair> CREATOR = new Creator<UriIdentifierPair>() {
+        @Override
+        public UriIdentifierPair createFromParcel(Parcel in) {
+            return new UriIdentifierPair(in);
+        }
+
+        @Override
+        public UriIdentifierPair[] newArray(int size) {
+            return new UriIdentifierPair[size];
+        }
+    };
 
     public int getLengthInFrames() {
         return lengthInFrames;
@@ -71,44 +111,6 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
         return uriIdentifier;
     }
 
-    protected UriIdentifierPair(Parcel in) {
-        uriIdentifier = (UriIdentifier) in.readValue(UriIdentifier.class.getClassLoader());
-        frameStartInProject = in.readByte() == 0x00 ? null : in.readInt();
-        lengthInFrames = in.readInt();
-        lengthInSeconds = in.readDouble();
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(uriIdentifier);
-        if (frameStartInProject == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeInt(frameStartInProject);
-        }
-        dest.writeInt(lengthInFrames);
-        dest.writeDouble(lengthInSeconds);
-    }
-
-    public static final Parcelable.Creator<UriIdentifierPair> CREATOR = new Parcelable.Creator<UriIdentifierPair>() {
-        @Override
-        public UriIdentifierPair createFromParcel(Parcel in) {
-            return new UriIdentifierPair(in);
-        }
-
-        @Override
-        public UriIdentifierPair[] newArray(int size) {
-            return new UriIdentifierPair[size];
-        }
-    };
-
-
     public static class UriIdentifierPairList implements Parcelable {
         private final List<UriIdentifierPair> pairs;
 
@@ -116,21 +118,13 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
             this.pairs = pairs;
         }
 
-        public static UriIdentifierPairList from(List<UriIdentifierPair> pairs){
-            return new UriIdentifierPairList(pairs);
-        }
-
-        public List<UriIdentifierPair> getPairs() {
-            return pairs;
-        }
-
         protected UriIdentifierPairList(Parcel in) {
-            if (in.readByte() == 0x01) {
-                pairs = new ArrayList<>();
-                in.readList(pairs, UriIdentifierPair.class.getClassLoader());
-            } else {
-                pairs = null;
-            }
+            pairs = in.createTypedArrayList(UriIdentifierPair.CREATOR);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeTypedList(pairs);
         }
 
         @Override
@@ -138,17 +132,7 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
             return 0;
         }
 
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            if (pairs == null) {
-                dest.writeByte((byte) (0x00));
-            } else {
-                dest.writeByte((byte) (0x01));
-                dest.writeList(pairs);
-            }
-        }
-
-        public static final Parcelable.Creator<UriIdentifierPairList> CREATOR = new Parcelable.Creator<UriIdentifierPairList>() {
+        public static final Creator<UriIdentifierPairList> CREATOR = new Creator<UriIdentifierPairList>() {
             @Override
             public UriIdentifierPairList createFromParcel(Parcel in) {
                 return new UriIdentifierPairList(in);
@@ -159,6 +143,14 @@ public class UriIdentifierPair implements Comparable<UriIdentifierPair>, Parcela
                 return new UriIdentifierPairList[size];
             }
         };
+
+        public static UriIdentifierPairList from(List<UriIdentifierPair> pairs){
+            return new UriIdentifierPairList(pairs);
+        }
+
+        public List<UriIdentifierPair> getPairs() {
+            return pairs;
+        }
     }
 
 

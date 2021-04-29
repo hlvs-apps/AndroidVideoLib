@@ -44,22 +44,11 @@ public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper i
     }
 
     protected RenderTaskWrapperWithUriIdentifierPairs(Parcel in) {
-        this(getWrapperFromParcel(in),getMatchingUriIdentifierPairsFromParcel(in));
+        this(getWrapperFromParcel(in),in.createTypedArrayList(UriIdentifierPair.CREATOR));
     }
 
     private static RenderTaskWrapper getWrapperFromParcel(Parcel in){
-        return (RenderTaskWrapper) in.readValue(RenderTaskWrapper.class.getClassLoader());
-    }
-
-    private static List<UriIdentifierPair> getMatchingUriIdentifierPairsFromParcel(Parcel in){
-        final List<UriIdentifierPair> matchingUriIdentifierPairs;
-        if (in.readByte() == 0x01) {
-            matchingUriIdentifierPairs = new ArrayList<>();
-            in.readList(matchingUriIdentifierPairs, UriIdentifierPair.class.getClassLoader());
-        } else {
-            matchingUriIdentifierPairs = null;
-        }
-        return matchingUriIdentifierPairs;
+        return (RenderTaskWrapper) in.readParcelable(RenderTaskWrapper.class.getClassLoader());
     }
 
     @Override
@@ -69,13 +58,8 @@ public class RenderTaskWrapperWithUriIdentifierPairs extends RenderTaskWrapper i
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(wrapper);
-        if (matchingUriIdentifierPairs == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(matchingUriIdentifierPairs);
-        }
+        dest.writeParcelable(wrapper,flags);
+        dest.writeTypedList(matchingUriIdentifierPairs);
     }
 
     public static final Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairs> CREATOR = new Parcelable.Creator<RenderTaskWrapperWithUriIdentifierPairs>() {

@@ -41,6 +41,32 @@ public class VideoSegment implements Parcelable {
         setUriIdentifiers(parts);
     }
 
+    protected VideoSegment(Parcel in) {
+        uriIdentifiers = in.createTypedArrayList(UriIdentifier.CREATOR);
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(uriIdentifiers);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<VideoSegment> CREATOR = new Creator<VideoSegment>() {
+        @Override
+        public VideoSegment createFromParcel(Parcel in) {
+            return new VideoSegment(in);
+        }
+
+        @Override
+        public VideoSegment[] newArray(int size) {
+            return new VideoSegment[size];
+        }
+    };
+
     /**
      * Get all {@link UriIdentifier}s
      * @return all {@link UriIdentifier}s contained in this {@link VideoSegment}
@@ -68,40 +94,4 @@ public class VideoSegment implements Parcelable {
             addUriIdentifier(i);
         }
     }
-
-    protected VideoSegment(Parcel in) {
-        if (in.readByte() == 0x01) {
-            uriIdentifiers = new ArrayList<UriIdentifier>();
-            in.readList(uriIdentifiers, UriIdentifier.class.getClassLoader());
-        } else {
-            uriIdentifiers = null;
-        }
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        if (uriIdentifiers == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(uriIdentifiers);
-        }
-    }
-
-    public static final Parcelable.Creator<VideoSegment> CREATOR = new Parcelable.Creator<VideoSegment>() {
-        @Override
-        public VideoSegment createFromParcel(Parcel in) {
-            return new VideoSegment(in);
-        }
-
-        @Override
-        public VideoSegment[] newArray(int size) {
-            return new VideoSegment[size];
-        }
-    };
 }

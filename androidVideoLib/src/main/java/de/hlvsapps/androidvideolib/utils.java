@@ -65,19 +65,7 @@ import java.util.List;
  * @author hlvs-apps
  */
 public class utils {
-
-    //CONSTANTS
-    private static String VIDEO_FOLDER_NAME="AndroidVideoLib-Video";
-
-     static final boolean BUILDCONFIGDEBUG=BuildConfig.DEBUG;
-
-     static void setVideoFolderName(String videoFolderName) {
-        VIDEO_FOLDER_NAME = videoFolderName;
-    }
-
-     public static String getVideoFolderName() {
-        return VIDEO_FOLDER_NAME;
-    }
+     private static final boolean BUILDCONFIGDEBUG=BuildConfig.DEBUG;
 
      public static void saveToExternalStorage(Bitmap bitmapImage, Context c, String name){
         ContextWrapper cw = new ContextWrapper(c.getApplicationContext());
@@ -237,7 +225,7 @@ public class utils {
     }
 
 
-    static List<Object> fileOutputStreamFromName(Context c, String name) throws FileNotFoundException {
+    static List<Object> fileOutputStreamFromName(Context c, String name, String VIDEO_FOLDER_NAME) throws FileNotFoundException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContentResolver resolver = c.getContentResolver();
             ContentValues contentValues = new ContentValues();

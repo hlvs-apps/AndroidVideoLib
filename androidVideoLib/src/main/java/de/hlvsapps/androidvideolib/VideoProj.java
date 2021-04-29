@@ -25,8 +25,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.os.PowerManager;
 
+import androidx.annotation.Keep;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.work.Constraints;
@@ -42,7 +45,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -65,42 +67,81 @@ import static de.hlvsapps.androidvideolib.Renderer.rendererWhenStartDataExtra;
  *
  * Before Rendering, you have to call {@link VideoProj#preRender(Runnable)} to save the Images of all Videos in your Apps Storage.
  * To Render call {@link VideoProj#renderInTo(String)}, {@link VideoProj#renderInTo(String, ProgressRender)}, {@link VideoProj#render(ProgressRender)} or {@link VideoProj#render()} to Render your Video to a specified Output.
- *
+ * @implNote Please call {@link VideoProj#setContext(Context)} after De-Parceling
  * @author hlvs-apps
  */
-public class VideoProj implements Serializable {
-    private static final long serialVersionUID = 42L;
+@Keep
+public class VideoProj implements Parcelable {
+    protected VideoProj(Parcel in) {
+        output = in.readString();
+        input = in.createTypedArrayList(VideoPart.CREATOR);
+        manualVideoUris = in.createTypedArrayList(UriIdentifier.CREATOR);
+        videoFolderName = in.readString();
+        fps = in.readParcelable(Rational.class.getClassLoader());
+        scaleFactor= (BigDecimal) in.readValue(BigDecimal.class.getClassLoader());
+        rendererTimeLine = in.readParcelable(RendererTimeLine.class.getClassLoader());
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(output);
+        dest.writeTypedList(input);
+        dest.writeTypedList(manualVideoUris);
+        dest.writeString(videoFolderName);
+        dest.writeParcelable(fps, flags);
+        dest.writeValue(scaleFactor);
+        dest.writeParcelable(rendererTimeLine, flags);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<VideoProj> CREATOR = new Creator<VideoProj>() {
+        @Override
+        public VideoProj createFromParcel(Parcel in) {
+            return new VideoProj(in);
+        }
+
+        @Override
+        public VideoProj[] newArray(int size) {
+            return new VideoProj[size];
+        }
+    };
+
     // Custom deserialization logic
     // This will allow us to have additional deserialization logic on top of the default one e.g. decrypting object after deserialization
     private void readObject(@NotNull ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ois.defaultReadObject(); // Calling the default deserialization logic
-        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
     private String output;
     private List<VideoPart> input;
-    private final AppCompatActivity context;
+    private Context context;
 
-    private Class renderActivity;
-    transient private int length;
-    transient private double length_seconds;
+    public void setContext(Context context) {
+        this.context = context;
+    }
 
-    transient private List<UriIdentifier> allVideoUris;
+    private Class<? extends AppCompatActivity> renderActivity;
+    private int length;
+    private double length_seconds;
+
+    private List<UriIdentifier> allVideoUris;
 
     private List<UriIdentifier> manualVideoUris;
 
     private String videoFolderName;
 
-    transient private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
+    private List<RenderTaskWrapperWithUriIdentifierPairs> renderTasksWithMatchingUriIdentifierPairs;
 
     private Rational fps=null;
 
     private BigDecimal scaleFactor=BigDecimal.valueOf(1);
 
-    private boolean[] which_task_finished;
-
-    private RendererTimeLine rendererTimeLine;
+    private final RendererTimeLine rendererTimeLine;
 
     /**
      * Sets the Scale Factor for preRendering.
@@ -124,7 +165,7 @@ public class VideoProj implements Serializable {
      * Sets the Activity class to show render Progress.
      * @param a The Render Activity Class
      */
-    public void setShowRenderProgressActivity(Class a){
+    public void setShowRenderProgressActivity(Class<? extends AppCompatActivity> a){
         renderActivity=a;
     }
 
@@ -135,7 +176,7 @@ public class VideoProj implements Serializable {
      * @param fps Output FPS
      * @param context Your Context
      */
-    public VideoProj(String outputname, List<VideoPart> input, Rational fps, AppCompatActivity context){
+    public VideoProj(String outputname, List<VideoPart> input, Rational fps, Context context){
         this.output=outputname;
         this.input=input;
         this.fps=fps;
@@ -143,8 +184,6 @@ public class VideoProj implements Serializable {
         this.rendererTimeLine=new RendererTimeLine();
         this.rendererTimeLine.addAllParts(this.input);
         this.videoFolderName=utils.getApplicationName(context)+"-Video";
-        renderActivity= context.getClass();
-        utils.setVideoFolderName(videoFolderName);
         updateRenderTimeLine();
     }
 
@@ -154,17 +193,8 @@ public class VideoProj implements Serializable {
      * @param input The VideoParts with the Videos
      * @param context Your Context
      */
-    public VideoProj(String outputname, List<VideoPart> input, AppCompatActivity context){
-        this.output=outputname;
-        this.input=input;
-        this.fps=null;
-        this.context=context;
-        this.rendererTimeLine=new RendererTimeLine();
-        this.rendererTimeLine.addAllParts(this.input);
-        this.videoFolderName=utils.getApplicationName(context)+"-Video";
-        renderActivity= context.getClass();
-        utils.setVideoFolderName(videoFolderName);
-        updateRenderTimeLine();
+    public VideoProj(String outputname, List<VideoPart> input, Context context){
+        this(outputname,input,null,context);
     }
 
     /**
@@ -173,16 +203,8 @@ public class VideoProj implements Serializable {
      * @param fps Output FPS
      * @param context Your Context
      */
-    public VideoProj(List<VideoPart> input,Rational fps, AppCompatActivity context){
-        this.input=input;
-        this.fps=fps;
-        this.context=context;
-        this.rendererTimeLine=new RendererTimeLine();
-        this.rendererTimeLine.addAllParts(this.input);
-        this.videoFolderName=utils.getApplicationName(context)+"-Video";
-        renderActivity= context.getClass();
-        utils.setVideoFolderName(videoFolderName);
-        updateRenderTimeLine();
+    public VideoProj(List<VideoPart> input,Rational fps, Context context){
+        this(null,input,fps,context);
     }
 
     /**
@@ -190,16 +212,8 @@ public class VideoProj implements Serializable {
      * @param input The VideoParts with the Videos
      * @param context Your Context
      */
-    public VideoProj(List<VideoPart> input, AppCompatActivity context){
-        this.input=input;
-        this.fps=null;
-        this.context=context;
-        this.rendererTimeLine=new RendererTimeLine();
-        this.rendererTimeLine.addAllParts(this.input);
-        this.videoFolderName=utils.getApplicationName(context)+"-Video";
-        renderActivity= context.getClass();
-        utils.setVideoFolderName(videoFolderName);
-        updateRenderTimeLine();
+    public VideoProj(List<VideoPart> input, Context context){
+        this(null,input,null,context);
     }
 
     /**
@@ -208,7 +222,6 @@ public class VideoProj implements Serializable {
      */
     public void setVideoFolderName(String name){
         videoFolderName=name;
-        utils.setVideoFolderName(videoFolderName);
     }
 
     /**
@@ -287,7 +300,7 @@ public class VideoProj implements Serializable {
      * Get your Context
      * @return your Context
      */
-    public AppCompatActivity getContext() {
+    public Context getContext() {
         return context;
     }
 
@@ -471,6 +484,47 @@ public class VideoProj implements Serializable {
         activity_utils.startPowerSaverIntent(context);
     }
 
+    /**
+     * Rendering with showing Progress in {@link ProgressActivity}
+     * @param output The output forwarded to {@link VideoProj#renderInTo(String)}
+     */
+    public void startRenderActivityAndRenderInTo(String output){
+        setShowRenderProgressActivity(ProgressActivity.class);
+        context.startActivity(new Intent(context,ProgressActivity.class));
+        renderInTo(output,new SendProgressAsBroadcast(context));
+    }
+
+    /**
+     * Rendering with showing Progress in {@link ProgressActivity}
+     */
+    public void startRenderActivityAndRenderInTo(){
+        setShowRenderProgressActivity(ProgressActivity.class);
+        context.startActivity(new Intent(context,ProgressActivity.class));
+        render(new SendProgressAsBroadcast(context,true,true));
+    }
+
+    /**
+     * Renders the VideoProj.
+     * Calls {@link VideoProj#renderInTo(String)} with output Name, or when null or "" with your AppsName and the actual date.
+     */
+    
+    public void render(){
+        render(null);
+    }
+
+    /**
+     * Renders the VideoProj.
+     * Calls {@link VideoProj#renderInTo(String,ProgressRender)} with output Name, or when null or "" with your AppsName and the actual date.
+     * @param progressRender The {@link ProgressRender} to call {@link VideoProj#renderInTo(String, ProgressRender)}
+     */
+    public void render(ProgressRender progressRender){
+        if(output==null || output.equals("")){
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
+            Date now = new Date();
+            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
+        }
+        renderInTo(output,progressRender);
+    }
 
     /**
      * Render this Project to a Output String.
@@ -497,12 +551,6 @@ public class VideoProj implements Serializable {
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");
         }
-
-        //askForBackgroundPermissions();
-
-// Issue the initial notification with zero progress
-
-// Do the job here that tracks the progress.
         Constraints constraints;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             constraints = new Constraints.Builder()
@@ -642,6 +690,7 @@ public class VideoProj implements Serializable {
             }
 
             Data inputData=new Data.Builder()
+                    .putString(LastRenderer.VIDEO_FOLDER_NAME_DATA_EXTRA,videoFolderName)
                     .putByteArray(LastRenderer.fpsDataExtra,utils.marshall(fps))
                     .putString(LastRenderer.fileNameDataExtra,output)
                     .putString(LastRenderer.realListFileStorageDataExtra,StringListParcelable.from(
@@ -780,49 +829,4 @@ public class VideoProj implements Serializable {
         this.output=output;
     }
 
-    /**
-     * Rendering with showing Progress in {@link ProgressActivity}
-     * @param output The output forwarded to {@link VideoProj#renderInTo(String)}
-     */
-    public void startRenderActivityAndRenderInTo(String output){
-        setShowRenderProgressActivity(ProgressActivity.class);
-        context.startActivity(new Intent(context,ProgressActivity.class));
-        renderInTo(output,new SendProgressAsBroadcast(context));
-    }
-
-    /**
-     * Rendering with showing Progress in {@link ProgressActivity}
-     */
-    public void startRenderActivityAndRenderInTo(){
-        setShowRenderProgressActivity(ProgressActivity.class);
-        context.startActivity(new Intent(context,ProgressActivity.class));
-        render(new SendProgressAsBroadcast(context,true,true));
-    }
-
-    /**
-     * Renders the VideoProj.
-     * Calls {@link VideoProj#renderInTo(String)} with output Name, or when null or "" with your AppsName and the actual date.
-     */
-    public void render(){
-        if(output==null || output.equals("")){
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
-            Date now = new Date();
-            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
-        }
-        renderInTo(output);
-    }
-
-    /**
-     * Renders the VideoProj.
-     * Calls {@link VideoProj#renderInTo(String,ProgressRender)} with output Name, or when null or "" with your AppsName and the actual date.
-     * @param progressRender The {@link ProgressRender} to call {@link VideoProj#renderInTo(String, ProgressRender)}
-     */
-    public void render(ProgressRender progressRender){
-        if(output==null || output.equals("")){
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
-            Date now = new Date();
-            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
-        }
-        renderInTo(output,progressRender);
-    }
 }

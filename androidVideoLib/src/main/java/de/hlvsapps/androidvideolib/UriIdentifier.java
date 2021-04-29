@@ -26,7 +26,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,44 +35,119 @@ import java.util.List;
  * You can add CustomData, in which you can pack all Information you need to render a this UriIdentifier.
  * You can use CustomData in implements Parcelable {@link RenderTask#render(List, List, int)} in the {@link VideoBitmap}.
  *
+ * Custom Data must have its own canonical Name, otherwise this will not work.
+ *
  * @author hlvs-apps
  */
-public class UriIdentifier implements Parcelable{
-    public static final int START_IN_VIDEO_SEGMENT_NOT_SET=-12354;
+public class UriIdentifier implements Parcelable {
+    public static final int START_IN_VIDEO_SEGMENT_NOT_SET = -12354;
     private int customLengthInFrames;
     private int customLengthInSeconds;
     private String identifier;
     private Uri uri;
     private int startInVideoSegment;
 
-    private List<Serializable> customData;
+    private List<Parcelable> customData=null;
 
     /**
      * Creates a normal {@link UriIdentifier}
-     * @param uri The Uri
-     * @param identifier The unique Identifier
+     *
+     * @param uri                 The Uri
+     * @param identifier          The unique Identifier
      * @param startInVideoSegment When does this UriIdentifier start in VideoSegment?
      */
-    public UriIdentifier(Uri uri,String identifier,int startInVideoSegment){
-        this.identifier=identifier;
-        this.uri=uri;
-        this.startInVideoSegment=startInVideoSegment;
+    public UriIdentifier(Uri uri, String identifier, int startInVideoSegment) {
+        this.identifier = identifier;
+        this.uri = uri;
+        this.startInVideoSegment = startInVideoSegment;
     }
 
     /**
      * Creates an UriIdentifier without startInVideoSegment. In this state, it is not usable by the complete Project. This Method is only when you want this UriIdentifier as Store for your Uris,
      * not to add them to an {@link VideoPart}.
-     * @param uri The Uri
+     *
+     * @param uri        The Uri
      * @param identifier The unique Identifier
      */
-    public UriIdentifier(Uri uri, String identifier){
-        this.identifier=identifier;
-        this.uri=uri;
-        this.startInVideoSegment=START_IN_VIDEO_SEGMENT_NOT_SET;
+    public UriIdentifier(Uri uri, String identifier) {
+        this.identifier = identifier;
+        this.uri = uri;
+        this.startInVideoSegment = START_IN_VIDEO_SEGMENT_NOT_SET;
     }
+
+    protected UriIdentifier(Parcel in) {
+        customLengthInFrames = in.readInt();
+        customLengthInSeconds = in.readInt();
+        identifier = in.readString();
+        uri = in.readParcelable(Uri.class.getClassLoader());
+        startInVideoSegment = in.readInt();
+        int wdn=in.readInt();
+        if(wdn!=3) {
+            if (wdn != 1) {
+                throw new IllegalStateException("Parceling did not Finish Correctly.");
+            }
+            customData = new ArrayList<>();
+            for (int i = 0; i < in.readInt(); i++) {
+                String name = in.readString();
+                try {
+                    customData.add(in.readParcelable(Class.forName(name).getClassLoader()));
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalStateException("Error: " + e.toString());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(customLengthInFrames);
+        dest.writeInt(customLengthInSeconds);
+        dest.writeString(identifier);
+        dest.writeParcelable(uri, flags);
+        dest.writeInt(startInVideoSegment);
+        if(customData==null){
+            dest.writeInt(3);
+        }else {
+            for (Parcelable parcelable : customData) {
+                String name = parcelable.getClass().getCanonicalName();
+                if (name == null) {
+                    dest.writeInt(0);
+                    throw new IllegalArgumentException("A custom Data Object implementation must have a CanonicalName, you can get the CanonicalName by (Your Class Instance).getClass().getCanonicalName()");
+                }
+            }
+            dest.writeInt(1);
+            dest.writeInt(customData.size());
+            for (Parcelable parcelable : customData) {
+                String name = parcelable.getClass().getCanonicalName();
+                if (name == null) {
+                    throw new IllegalStateException("A IllegalStateException should already be thrown, so this should not happen!!!!!!!!!");
+                }
+                dest.writeString(name);
+                dest.writeParcelable(parcelable, flags);
+            }
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<UriIdentifier> CREATOR = new Creator<UriIdentifier>() {
+        @Override
+        public UriIdentifier createFromParcel(Parcel in) {
+            return new UriIdentifier(in);
+        }
+
+        @Override
+        public UriIdentifier[] newArray(int size) {
+            return new UriIdentifier[size];
+        }
+    };
 
     /**
      * Gets a custom length in Frames, must not equal the real Length.
+     *
      * @return The Custom Length set by {@link UriIdentifier#setCustomLengthInFrames(int)}
      */
     public int getCustomLengthInFrames() {
@@ -82,6 +156,7 @@ public class UriIdentifier implements Parcelable{
 
     /**
      * Sets a Custom Length in Frames, has no effect on real Length.
+     *
      * @param customLengthInFrames The Length.
      */
     public void setCustomLengthInFrames(int customLengthInFrames) {
@@ -94,30 +169,27 @@ public class UriIdentifier implements Parcelable{
 
     /**
      * Adds Custom Object Data.
+     *
      * @param customData The Custom Data you want to add.
      * @see UriIdentifier
      */
-    public void addCustomData(Serializable... customData){
-        if(this.customData==null)this.customData=new ArrayList<>();
+    public void addCustomData(Parcelable... customData) {
+        if (this.customData == null) this.customData = new ArrayList<>();
         this.customData.addAll(Arrays.asList(customData));
     }
 
     /**
      * Sets custom Object Data
+     *
      * @param customData The Custom Data you want to set, as new Custom Data.
      * @see UriIdentifier
      */
-    public void setCustomData(List<Serializable> customData) {
+    public void setCustomData(List<Parcelable> customData) {
         this.customData = customData;
     }
 
-    /**
-     * Adds Custom Object Data.
-     * @param customData The Custom Data you want to add.
-     * @see UriIdentifier
-     */
-    public void addCustomData(List<Object> customData){
-        if(this.customData==null)this.customData=new ArrayList<>();
+    public List<Parcelable> getCustomData() {
+        return customData;
     }
 
     public void setCustomLengthInSeconds(int customLengthInSeconds) {
@@ -127,23 +199,25 @@ public class UriIdentifier implements Parcelable{
     /**
      * Gets the Length of the Video of the Uri in Frames
      * Do not use this in AndroidVideoLib, instead use Cached Length in {@link UriIdentifierPair}
+     *
      * @param c Your Context
      * @return The Length in Frames
      * @throws IOException Thrown by {@link utils#getMP4LengthInFrames(Context, Uri)}
      */
     public int getRealLengthInFrames(Context c) throws IOException {
-        return utils.getMP4LengthInFrames(c,uri);
+        return utils.getMP4LengthInFrames(c, uri);
     }
 
     /**
      * Gets the Length of the Video of the Uri in Seconds
      * Do not use this in AndroidVideoLib, instead use Cached Length in {@link UriIdentifierPair}
+     *
      * @param c Your Context
      * @return The Length in Seconds
      * @throws IOException Thrown by {@link utils#getMP4LengthInSeconds(Context, Uri)}
      */
     public double getRealLengthInSeconds(Context c) throws IOException {
-        return utils.getMP4LengthInSeconds(c,uri);
+        return utils.getMP4LengthInSeconds(c, uri);
     }
 
 
@@ -172,50 +246,4 @@ public class UriIdentifier implements Parcelable{
         return uri;
     }
 
-    protected UriIdentifier(Parcel in) {
-        customLengthInFrames = in.readInt();
-        customLengthInSeconds = in.readInt();
-        identifier = in.readString();
-        String uriString=(String) in.readValue(String.class.getClassLoader());
-        uri = Uri.parse(uriString);
-        startInVideoSegment = in.readInt();
-        if (in.readByte() == 0x01) {
-            customData = new ArrayList<Serializable>();
-            in.readList(customData, Serializable.class.getClassLoader());
-        } else {
-            customData = null;
-        }
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(customLengthInFrames);
-        dest.writeInt(customLengthInSeconds);
-        dest.writeString(identifier);
-        dest.writeValue(uri.toString());
-        dest.writeInt(startInVideoSegment);
-        if (customData == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(customData);
-        }
-    }
-
-    public static final Parcelable.Creator<UriIdentifier> CREATOR = new Parcelable.Creator<UriIdentifier>() {
-        @Override
-        public UriIdentifier createFromParcel(Parcel in) {
-            return new UriIdentifier(in);
-        }
-
-        @Override
-        public UriIdentifier[] newArray(int size) {
-            return new UriIdentifier[size];
-        }
-    };
 }

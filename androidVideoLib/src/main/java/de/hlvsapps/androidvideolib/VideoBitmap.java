@@ -37,6 +37,34 @@ public class VideoBitmap implements Parcelable {
         this.uIdentifier=uriIdentifier;
     }
 
+    protected VideoBitmap(Parcel in) {
+        bitmap = in.readParcelable(Bitmap.class.getClassLoader());
+        uIdentifier = in.readParcelable(UriIdentifier.class.getClassLoader());
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeParcelable(bitmap, flags);
+        dest.writeParcelable(uIdentifier, flags);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<VideoBitmap> CREATOR = new Creator<VideoBitmap>() {
+        @Override
+        public VideoBitmap createFromParcel(Parcel in) {
+            return new VideoBitmap(in);
+        }
+
+        @Override
+        public VideoBitmap[] newArray(int size) {
+            return new VideoBitmap[size];
+        }
+    };
+
     public Bitmap getBitmap() {
         return bitmap;
     }
@@ -48,32 +76,4 @@ public class VideoBitmap implements Parcelable {
     public UriIdentifier getUriIdentifier(){
         return uIdentifier;
     }
-
-    protected VideoBitmap(Parcel in) {
-        bitmap = (Bitmap) in.readValue(Bitmap.class.getClassLoader());
-        uIdentifier = (UriIdentifier) in.readValue(UriIdentifier.class.getClassLoader());
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(bitmap);
-        dest.writeValue(uIdentifier);
-    }
-
-    public static final Parcelable.Creator<VideoBitmap> CREATOR = new Parcelable.Creator<VideoBitmap>() {
-        @Override
-        public VideoBitmap createFromParcel(Parcel in) {
-            return new VideoBitmap(in);
-        }
-
-        @Override
-        public VideoBitmap[] newArray(int size) {
-            return new VideoBitmap[size];
-        }
-    };
 }

@@ -85,7 +85,7 @@ public class RenderTaskWrapper implements Parcelable {
             frameInProjectFrom = in.readInt();
             frameInProjectTo = in.readInt();
         }catch (Exception exception){
-            throw new IllegalStateException("Error:\n"+exception.getMessage());
+            throw new IllegalStateException("Error: "+exception.toString());
         }
     }
 
@@ -101,7 +101,7 @@ public class RenderTaskWrapper implements Parcelable {
             throw new IllegalArgumentException("A renderTask Implementation must have a CanonicalName, you can get the CanonicalName by (Your Class Instance).getClass().getCanonicalName()");
         }
         dest.writeString(renderTaskClassName);
-        dest.writeParcelable(renderTask,0);
+        dest.writeParcelable(renderTask,flags);
         dest.writeInt(frameInPartFrom);
         dest.writeInt(frameInPartTo);
         dest.writeInt(frameInProjectFrom);

@@ -53,6 +53,36 @@ public class VideoPart implements Parcelable {
         segments=new ArrayList<>();
     }
 
+    protected VideoPart(Parcel in) {
+        renderTaskWrappers = in.createTypedArrayList(RenderTaskWrapper.CREATOR);
+        segments = in.createTypedArrayList(VideoSegmentWithTime.CREATOR);
+        frameStartInProject = in.readInt();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(renderTaskWrappers);
+        dest.writeTypedList(segments);
+        dest.writeInt(frameStartInProject);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<VideoPart> CREATOR = new Creator<VideoPart>() {
+        @Override
+        public VideoPart createFromParcel(Parcel in) {
+            return new VideoPart(in);
+        }
+
+        @Override
+        public VideoPart[] newArray(int size) {
+            return new VideoPart[size];
+        }
+    };
+
     public List<RenderTaskWrapper> getRenderTaskWrappers() {
         return renderTaskWrappers;
     }
@@ -92,53 +122,4 @@ public class VideoPart implements Parcelable {
         return frameStartInProject;
     }
 
-    protected VideoPart(Parcel in) {
-        if (in.readByte() == 0x01) {
-            renderTaskWrappers = new ArrayList<RenderTaskWrapper>();
-            in.readList(renderTaskWrappers, RenderTaskWrapper.class.getClassLoader());
-        } else {
-            renderTaskWrappers = null;
-        }
-        if (in.readByte() == 0x01) {
-            segments = new ArrayList<VideoSegmentWithTime>();
-            in.readList(segments, VideoSegmentWithTime.class.getClassLoader());
-        } else {
-            segments = null;
-        }
-        frameStartInProject = in.readInt();
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        if (renderTaskWrappers == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(renderTaskWrappers);
-        }
-        if (segments == null) {
-            dest.writeByte((byte) (0x00));
-        } else {
-            dest.writeByte((byte) (0x01));
-            dest.writeList(segments);
-        }
-        dest.writeInt(frameStartInProject);
-    }
-
-    public static final Parcelable.Creator<VideoPart> CREATOR = new Parcelable.Creator<VideoPart>() {
-        @Override
-        public VideoPart createFromParcel(Parcel in) {
-            return new VideoPart(in);
-        }
-
-        @Override
-        public VideoPart[] newArray(int size) {
-            return new VideoPart[size];
-        }
-    };
 }
