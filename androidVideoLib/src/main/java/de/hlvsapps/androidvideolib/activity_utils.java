@@ -62,9 +62,9 @@ public class activity_utils {
         for (Intent intent : POWERMANAGER_INTENTS) {
             if (isCallable(context, intent)) {
                 new AlertDialog.Builder(context)
-                        .setTitle(Build.MANUFACTURER + " Protected Apps")
-                        .setMessage(String.format("%s requires to be 'White list' to function properly.\nDisable %s from list, otherwise the App will not be able to render when the display is off.\nIf you have to check options, make sure to check all.%n", context.getString(R.string.app_name), context.getString(R.string.app_name)))
-                        .setPositiveButton("Go to settings", (dialog, which) -> {
+                        .setTitle(String.format(context.getString(R.string.title_power_saver_intent),Build.MANUFACTURER))
+                        .setMessage(String.format(context.getString(R.string.content_power_saver_intent), context.getString(R.string.app_name), context.getString(R.string.app_name)))
+                        .setPositiveButton(R.string.go_to_settings, (dialog, which) -> {
                             context.startActivity(intent);
                             dialog.dismiss();
                         })

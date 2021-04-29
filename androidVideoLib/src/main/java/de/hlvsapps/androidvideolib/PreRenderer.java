@@ -25,6 +25,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
@@ -115,8 +116,11 @@ public class PreRenderer extends Worker {
     //private NotificationManagerCompat notificationManager;
     //private NotificationCompat.Builder builder;
 
-    final static String parcelableByteArrayListUriIdentifierPair="ParcelableByteArrayListUriIdentifierPair";
-    final static String serializableByteArrayScaleFactor="serializableByteArrayScaleFactor";
+    public final static String parcelableByteArrayListUriIdentifierPair="ParcelableByteArrayListUriIdentifierPair";
+    public final static String serializableByteArrayScaleFactor="serializableByteArrayScaleFactor";
+    public final static String pendingIntentCanonicalNameDataExtra="pendingIntentCanonicalNameDataExtra";
+
+    private final PendingIntent pendingIntentForNotification;
 
     public PreRenderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
@@ -124,6 +128,21 @@ public class PreRenderer extends Worker {
         WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
         Data inputData=workerParams.getInputData();
         scaleFactor= SerializationUtils.deserialize(inputData.getByteArray(serializableByteArrayScaleFactor));
+        String pendingIntentCanonicalName=inputData.getString(pendingIntentCanonicalNameDataExtra);
+        PendingIntent pendingIntentForNotification;
+        if(pendingIntentCanonicalName==null){
+            pendingIntentForNotification =null;
+        }else{
+            try {
+                Intent intent = new Intent(context, Class.forName(pendingIntentCanonicalName));
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                pendingIntentForNotification = PendingIntent.getActivity(context, 0, intent, 0);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                pendingIntentForNotification =null;
+            }
+        }
+        this.pendingIntentForNotification = pendingIntentForNotification;
         byte[] temp=inputData.getByteArray(parcelableByteArrayListUriIdentifierPair);
         if(temp==null){
             workList=new ArrayList<>();
@@ -283,6 +302,9 @@ public class PreRenderer extends Worker {
                 .setNotificationSilent()
                 .setOnlyAlertOnce(true)
                 .setSmallIcon(R.drawable.ic_baseline_import_export_24);
+        if(pendingIntentForNotification!=null){
+            notificationBuilder=notificationBuilder.setContentIntent(pendingIntentForNotification);
+        }
         if(!finished) {
             notificationBuilder=notificationBuilder.setProgress(max, progress, intermediate)
                     .setOngoing(true)

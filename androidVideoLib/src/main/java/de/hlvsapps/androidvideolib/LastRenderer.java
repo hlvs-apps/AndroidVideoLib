@@ -24,6 +24,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
@@ -33,6 +34,7 @@ import android.os.PowerManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.work.Data;
 import androidx.work.ForegroundInfo;
 import androidx.work.WorkManager;
@@ -79,10 +81,15 @@ public class LastRenderer extends Worker {
             ="uriIdentifierPairListFileStorageDataExtra";
     private final List<UriIdentifierPair> uriIdentifierPairList;
 
+    public final static String pendingIntentCanonicalNameDataExtra="pendingIntentCanonicalNameDataExtra";
+    private final PendingIntent pendingIntentForNotification;
+
     public static final String CHANNEL_ID = "CHANNEL_ID_EXPORT";
+    public static final String CHANNEL_MESSAGES_ID = "CHANNEL_MESSAGES_ID";
     public static final String END_OF_WAKE_LOCK_ID="::ExportLock";
     private final String WAKE_LOCK_ID;
     public static final int NOTIFICATION_ID = 1200;
+    public static final int NOTIFICATION_ID_MESSAGES = 1201;
 
     public static final String keyFailedExtraData="keyFailedExtraData";
 
@@ -91,6 +98,21 @@ public class LastRenderer extends Worker {
         WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
         this.context=context;
         Data inputData=workerParams.getInputData();
+        String pendingIntentCanonicalName=inputData.getString(pendingIntentCanonicalNameDataExtra);
+        PendingIntent pendingIntentForNotification;
+        if(pendingIntentCanonicalName==null){
+            pendingIntentForNotification =null;
+        }else{
+            try {
+                Intent intent = new Intent(context, Class.forName(pendingIntentCanonicalName));
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                pendingIntentForNotification = PendingIntent.getActivity(context, 0, intent, 0);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                pendingIntentForNotification =null;
+            }
+        }
+        this.pendingIntentForNotification = pendingIntentForNotification;
         this.VIDEO_FOLDER_NAME=inputData.getString(VIDEO_FOLDER_NAME_DATA_EXTRA);
         this.fps=utils.unmarshal(inputData.getByteArray(fpsDataExtra),Rational.CREATOR);
         this.fileName=inputData.getString(fileNameDataExtra);
@@ -179,6 +201,7 @@ public class LastRenderer extends Worker {
             stream1.close();
             if(d!=null)d.close();
             new Handler().postDelayed(() -> {
+                messageInfoFinished();
                 wakeLock.release();
                 utils.LogD("Complete Finished");
             },100);
@@ -239,7 +262,6 @@ public class LastRenderer extends Worker {
     @NonNull
     private ForegroundInfo createForegroundInfo(int progress, int max, boolean intermediate) {
         // Build a notification using bytesRead and contentLength
-
         Context context = getApplicationContext();
         String title = context.getString(R.string.exporting);
         String cancel = context.getString(R.string.cancel);
@@ -257,15 +279,43 @@ public class LastRenderer extends Worker {
                 .setChannelId(CHANNEL_ID)
                 .setNotificationSilent()
                 .setOnlyAlertOnce(true)
-                .setSmallIcon(R.drawable.ic_baseline_import_export_24);
-        notificationBuilder=notificationBuilder.setProgress(max, progress, intermediate)
-                    .setOngoing(true)
-                    // Add the cancel action to the notification which can
-                    // be used to cancel the worker
-                    .addAction(android.R.drawable.ic_delete, cancel, intent);
+                .setSmallIcon(R.drawable.ic_baseline_import_export_24)
+                .setProgress(max, progress, intermediate)
+                .setOngoing(true)
+                // Add the cancel action to the notification which can
+                // be used to cancel the worker
+                .addAction(android.R.drawable.ic_delete, cancel, intent);
+        if(pendingIntentForNotification!=null){
+            notificationBuilder=notificationBuilder.setContentIntent(pendingIntentForNotification);
+        }
 
 
         return new ForegroundInfo(NOTIFICATION_ID,notificationBuilder.build());
+    }
+
+    private void messageInfoFinished() {
+        //TODO does not Work, I dont know why
+
+        // Build a notification using bytesRead and contentLength
+        String title = context.getString(R.string.exporting_complete);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel();
+        }
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, CHANNEL_MESSAGES_ID)
+                .setContentTitle(title)
+                .setTicker(title)
+                .setChannelId(CHANNEL_MESSAGES_ID)
+                .setNotificationSilent()
+                .setOnlyAlertOnce(false)
+                .setSmallIcon(R.drawable.ic_baseline_import_export_24)
+                .setOngoing(false);
+        if(pendingIntentForNotification!=null){
+            notificationBuilder=notificationBuilder.setContentIntent(pendingIntentForNotification);
+        }
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.notify(NOTIFICATION_ID_MESSAGES, notificationBuilder.build());
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -274,6 +324,19 @@ public class LastRenderer extends Worker {
         String description = context.getString(R.string.exporting);
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createNotificationChannel() {
+        CharSequence name = context.getString(R.string.render_messages_channel_notification_title);
+        String description = context.getString(R.string.render_messages_notification_channel_description);
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_MESSAGES_ID, name, importance);
         channel.setDescription(description);
         // Register the channel with the system; you can't change the importance
         // or other notification behaviors after this

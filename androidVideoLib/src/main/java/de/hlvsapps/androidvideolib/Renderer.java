@@ -24,6 +24,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.PowerManager;
@@ -67,6 +68,7 @@ public class Renderer extends Worker {
     public static final String rendererWhenEndDataExtra ="rendererWhenEndDataExtra";
     public static final String projectLengthDataExtra="projectLengthDataExtra";
     public static final String renderTasksWithMatchingUriIdentifierPairsDataExtra="renderTasksWithMatchingUriIdentifierPairsDataExtra";
+    public final static String pendingIntentCanonicalNameDataExtra ="pendingIntentCanonicalNameDataExtra";
 
     public static final int NOTIFICATION_ID =1037;//Plus num_of_workers next 1200
     public static final String CHANNEL_ID = "CHANNEL_ID_RENDER";
@@ -82,10 +84,26 @@ public class Renderer extends Worker {
     private final int count_of_workers;
     private final int project_length;
     private final List<RenderTaskWrapperWithUriIdentifierPairs> renderTaskWrapperWithUriIdentifierPairs;
+    private final PendingIntent pendingIntentForNotification;
     public Renderer(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
         WAKE_LOCK_ID = utils.getApplicationName(context) + END_OF_WAKE_LOCK_ID;
         Data inputData=workerParams.getInputData();
+        String pendingIntentCanonicalName=inputData.getString(pendingIntentCanonicalNameDataExtra);
+        PendingIntent pendingIntentForNotification;
+        if(pendingIntentCanonicalName==null){
+            pendingIntentForNotification =null;
+        }else{
+            try {
+                Intent intent = new Intent(context, Class.forName(pendingIntentCanonicalName));
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                pendingIntentForNotification = PendingIntent.getActivity(context, 0, intent, 0);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                pendingIntentForNotification =null;
+            }
+        }
+        this.pendingIntentForNotification = pendingIntentForNotification;
         which_renderer = inputData.getInt(numOfThisWorkerDataExtra, -1);
         from = inputData.getInt(rendererWhenStartDataExtra, -2);
         to = inputData.getInt(rendererWhenEndDataExtra, -2);
@@ -264,6 +282,9 @@ public class Renderer extends Worker {
                 // Add the cancel action to the notification which can
                 // be used to cancel the worker
                 .addAction(android.R.drawable.ic_delete, cancel, intent);
+        if(pendingIntentForNotification!=null){
+            notificationBuilder=notificationBuilder.setContentIntent(pendingIntentForNotification);
+        }
 
 
         return new ForegroundInfo(NOTIFICATION_ID+which_renderer,notificationBuilder.build());

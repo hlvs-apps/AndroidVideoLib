@@ -28,4 +28,10 @@
     <string name="renderChannelName">RenderingVideo</string>
     <string name="exporting">Exporting Video</string>
     <string name="lastRenderChannelName">ExportingVideo</string>
+    <string name="title_power_saver_intent">%s Energy features Ignoring Protected Apps%n</string>
+    <string name="content_power_saver_intent">%s requires to be \'White list\' to function properly.\nDisable %s from list, otherwise the App will not be able to render when the display is off.\nIf you have to check options, make sure to check all.%n</string>
+    <string name="go_to_settings">Go to settings</string>
+    <string name="exporting_complete">Exporting Complete</string>
+    <string name="render_messages_channel_notification_title">Render-Messages</string>
+    <string name="render_messages_notification_channel_description">Messages for Rendering-Specific Tasks</string>
 </resources>

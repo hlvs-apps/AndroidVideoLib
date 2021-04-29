@@ -151,6 +151,7 @@ public class video_test extends AppCompatActivity {
             VideoProj videoProj = new VideoProj(Collections.singletonList(part), this);
             videoProj.setFps(videoProj.getFpsOfFirstClip());
             utils.LogD(String.valueOf(videoProj.getLength()));
+            VideoProj.askForBackgroundPermissionsVendorSpecific(this);
             videoProj.preRender(() -> {
                 videoProj.startRenderActivityAndRenderInTo();
                 runOnUiThread(() -> {

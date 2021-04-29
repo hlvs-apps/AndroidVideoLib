@@ -125,7 +125,7 @@ public class VideoProj implements Parcelable {
         this.context = context;
     }
 
-    private Class<? extends AppCompatActivity> renderActivity;
+    private Class<? extends AppCompatActivity> renderActivity=null;
     private int length;
     private double length_seconds;
 
@@ -394,14 +394,13 @@ public class VideoProj implements Parcelable {
     /**
      * Extracts all Videos into Images in external files dir, to provide a better Rendering
      * Please Call this before you Render!
+     * <br>
+     * Consider to call {@link VideoProj#askForBackgroundPermissionsVendorSpecific(Context)} before!
      *
      * @param onFinish Runnable to Execute when preRendering finished
      * @param onProgress On Do Progress
      */
     public void preRender(Runnable onFinish, PreRenderer.ProgressPreRender onProgress){
-        askForBackgroundPermissions();
-
-    // Do the job here that tracks the progress.
 
         Constraints constraints;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -416,13 +415,15 @@ public class VideoProj implements Parcelable {
                     .setRequiresBatteryNotLow(false)
                     .build();
         }
-
+        Data.Builder builder=new Data.Builder()
+                .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(rendererTimeLine.getUriIdentifierPairs())))
+                .putByteArray(PreRenderer.serializableByteArrayScaleFactor, SerializationUtils.serialize(scaleFactor));
+        if(renderActivity!=null) {
+            builder.putString(PreRenderer.pendingIntentCanonicalNameDataExtra,renderActivity.getCanonicalName());
+        }
         OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
                 .setConstraints(constraints)
-                .setInputData((new Data.Builder())
-                        .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(rendererTimeLine.getUriIdentifierPairs())))
-                        .putByteArray(PreRenderer.serializableByteArrayScaleFactor, SerializationUtils.serialize(scaleFactor))
-                        .build())
+                .setInputData(builder.build())
                 .build();
         WorkManager.getInstance(context.getApplicationContext())
                 .enqueueUniqueWork("Import"+toString(),ExistingWorkPolicy.REPLACE,renderRequest);
@@ -466,9 +467,10 @@ public class VideoProj implements Parcelable {
 
 
     /**
-     * Ask for Background Execution Permissions. Do call this before Rendering
+     * Ask for Background Execution Permissions
+     * @param context The Context with which you want to start the ask Intent
      */
-    public void askForBackgroundPermissions(){
+    public static void askForBackgroundPermissions(Context context){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String packageName = context.getPackageName();
             PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
@@ -480,7 +482,14 @@ public class VideoProj implements Parcelable {
                 context.startActivity(intent);
             }
         }
-        //TODO add if
+    }
+
+    /**
+     * Ask for Background Execution Permissions Vendor Specific. Do call this to grant your App Background Execution Permissions
+     * @param context The Context with which you want to start the ask Intents
+     */
+    public static void askForBackgroundPermissionsVendorSpecific(Context context){
+        askForBackgroundPermissions(context);
         activity_utils.startPowerSaverIntent(context);
     }
 
@@ -582,6 +591,9 @@ public class VideoProj implements Parcelable {
             b.putInt(rendererWhenEndDataExtra, -1);
             b.putInt(Renderer.countOfWorkersDataExtra,num_of_workers);
             b.putInt(Renderer.projectLengthDataExtra,length);
+            if(renderActivity!=null) {
+                b.putString(Renderer.pendingIntentCanonicalNameDataExtra,renderActivity.getCanonicalName());
+            }
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(Renderer.class)
                     .setConstraints(constraints)
                     .setInputData(b.build())
@@ -600,6 +612,9 @@ public class VideoProj implements Parcelable {
                 b.putInt(rendererWhenEndDataExtra, (i + 1) == num_of_workers ? -1 : (i + 1) * frames_per_worker);
                 b.putInt(Renderer.countOfWorkersDataExtra,num_of_workers);
                 b.putInt(Renderer.projectLengthDataExtra,length);
+                if(renderActivity!=null) {
+                    b.putString(Renderer.pendingIntentCanonicalNameDataExtra,renderActivity.getCanonicalName());
+                }
                 try {
                     b.putString(Renderer.renderTasksWithMatchingUriIdentifierPairsDataExtra,
                             utils.writeByteArrayToTempFile(context, utils.marshall(RenderTaskWrapperWithUriIdentifierPairs.RenderTaskWrapperWithUriIdentifierPairsList
@@ -689,7 +704,7 @@ public class VideoProj implements Parcelable {
                         .build();
             }
 
-            Data inputData=new Data.Builder()
+            Data.Builder inputData=new Data.Builder()
                     .putString(LastRenderer.VIDEO_FOLDER_NAME_DATA_EXTRA,videoFolderName)
                     .putByteArray(LastRenderer.fpsDataExtra,utils.marshall(fps))
                     .putString(LastRenderer.fileNameDataExtra,output)
@@ -699,13 +714,15 @@ public class VideoProj implements Parcelable {
                     .putString(LastRenderer.uriIdentifierPairListFileStorageDataExtra,
                             utils.writeByteArrayToTempFile(context,
                                     utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(
-                                            rendererTimeLine.getUriIdentifierPairs()))).getPath())
-                    .build();
+                                            rendererTimeLine.getUriIdentifierPairs()))).getPath());
+            if(renderActivity!=null) {
+                inputData.putString(LastRenderer.pendingIntentCanonicalNameDataExtra,renderActivity.getCanonicalName());
+            }
 
 
             OneTimeWorkRequest renderRequest = new OneTimeWorkRequest.Builder(LastRenderer.class)
                     .setConstraints(constraints)
-                    .setInputData(inputData)
+                    .setInputData(inputData.build())
                     .build();
             WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Export", ExistingWorkPolicy.REPLACE, renderRequest);
             WorkManager.getInstance(context.getApplicationContext())
@@ -726,6 +743,7 @@ public class VideoProj implements Parcelable {
                                     if(failed){
                                         progressRender.exportFailed();
                                     }
+                                    renderActivity=null;
                                     WorkManager.getInstance(context.getApplicationContext()).getWorkInfoByIdLiveData(renderRequest.getId()).removeObserver(this);
                                 }
                             }
