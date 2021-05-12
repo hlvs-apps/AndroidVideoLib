@@ -40,11 +40,9 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -109,13 +107,6 @@ public class VideoProj implements Parcelable {
             return new VideoProj[size];
         }
     };
-
-    // Custom deserialization logic
-    // This will allow us to have additional deserialization logic on top of the default one e.g. decrypting object after deserialization
-    private void readObject(@NotNull ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        ois.defaultReadObject(); // Calling the default deserialization logic
-        updateRenderTimeLine();
-    }
 
     private String output;
     private List<VideoPart> input;
@@ -505,11 +496,32 @@ public class VideoProj implements Parcelable {
 
     /**
      * Rendering with showing Progress in {@link ProgressActivity}
+     * @param output The output forwarded to {@link VideoProj#renderInTo(String)}
+     * @param num_of_workers The number of Worker Threads
+     */
+    public void startRenderActivityAndRenderInTo(String output,int num_of_workers){
+        setShowRenderProgressActivity(ProgressActivity.class);
+        context.startActivity(new Intent(context,ProgressActivity.class));
+        renderInTo(output,new SendProgressAsBroadcast(context),num_of_workers);
+    }
+
+    /**
+     * Rendering with showing Progress in {@link ProgressActivity}
      */
     public void startRenderActivityAndRenderInTo(){
         setShowRenderProgressActivity(ProgressActivity.class);
         context.startActivity(new Intent(context,ProgressActivity.class));
         render(new SendProgressAsBroadcast(context,true,true));
+    }
+
+    /**
+     * Rendering with showing Progress in {@link ProgressActivity}
+     * @param num_of_workers The number of Worker Threads
+     */
+    public void startRenderActivityAndRenderInTo(int num_of_workers){
+        setShowRenderProgressActivity(ProgressActivity.class);
+        context.startActivity(new Intent(context,ProgressActivity.class));
+        render(new SendProgressAsBroadcast(context,true,true),num_of_workers);
     }
 
     /**
@@ -536,6 +548,20 @@ public class VideoProj implements Parcelable {
     }
 
     /**
+     * Renders the VideoProj.
+     * Calls {@link VideoProj#renderInTo(String,ProgressRender)} with output Name, or when null or "" with your AppsName and the actual date.
+     * @param progressRender The {@link ProgressRender} to call {@link VideoProj#renderInTo(String, ProgressRender)}
+     */
+    public void render(ProgressRender progressRender, int num_of_workers){
+        if(output==null || output.equals("")){
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.getDefault());
+            Date now = new Date();
+            output=utils.getApplicationName(context)+"_VideoExport "+formatter.format(now);
+        }
+        renderInTo(output,progressRender,num_of_workers);
+    }
+
+    /**
      * Render this Project to a Output String.
      * Uses {@link VideoProj#renderInTo(String, ProgressRender)} with null for progressRender.
      * Please don't forget to set the FPS with {@link VideoProj#setFps(Rational)}, otherwise we cant Render the Project.
@@ -555,7 +581,19 @@ public class VideoProj implements Parcelable {
      * @param progressRender Progress of Rendering
      * @throws IllegalStateException When FPS is null
      */
-    public void renderInTo(String output,ProgressRender progressRender) throws IllegalStateException{
+    public void renderInTo(String output,ProgressRender progressRender){
+        renderInTo(output,progressRender,Runtime.getRuntime().availableProcessors()*2+4);
+    }
+    /**
+     * Render this Project to a Output String
+     * Please don't forget to set the FPS with {@link VideoProj#setFps(Rational)}, otherwise we cant Render the Project.
+     *
+     * @param output The Output File Name as String. New Output of this VideoProj will become that.
+     * @param progressRender Progress of Rendering
+     * @param num_of_workers The number of Worker Threads
+     * @throws IllegalStateException When FPS is null
+     */
+    public void renderInTo(String output,ProgressRender progressRender, int num_of_workers) throws IllegalStateException{
         this.output=output;
         if(fps==null){
             throw new IllegalStateException("FPS can not be null");
@@ -574,7 +612,6 @@ public class VideoProj implements Parcelable {
                     .build();
         }
 
-        int num_of_workers=Runtime.getRuntime().availableProcessors()*2+4;
         int frames_per_worker= (int) (Math.floor((getLength()*1D)/num_of_workers)-1);
         if(frames_per_worker<=0) {
             num_of_workers=num_of_workers/4;
