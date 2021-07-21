@@ -55,4 +55,21 @@ public class ExampleUnitTest {
         System.out.println("The End");
         assertTrue(b2);
     }
+    public static int count(Exception e) {
+        try {
+            if(e!=null){
+                throw e;
+            }
+            return 1;
+        } catch(Exception ee) {
+            ee.printStackTrace();
+            return 2;
+        } finally {
+            System.out.println("Finally block will execute even after a return statement in a method");
+        }
+    }
+    @Test public void test(){
+        System.out.println(count(null));
+        System.out.println(count(new IllegalStateException()));
+    }
 }

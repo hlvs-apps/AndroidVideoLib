@@ -621,6 +621,9 @@ public class VideoProj implements Parcelable {
         List<String>[] inputs_from_last_render = new List[num_of_workers];
         boolean[] which_task_finished=new boolean[num_of_workers];
         if(progressRender!=null)progressRender.instantiateProgressesForRendering(num_of_workers);
+
+        ArrayList<OneTimeWorkRequest> workersForObservers=new ArrayList<>(Math.max(num_of_workers, 1));
+
         if(frames_per_worker<0) {
             Data.Builder b = new Data.Builder();
             b.putInt(numOfThisWorkerDataExtra, 0);
@@ -637,10 +640,7 @@ public class VideoProj implements Parcelable {
                     .build();
             WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render0",
                     ExistingWorkPolicy.REPLACE, renderRequest);
-            WorkManager.getInstance(context.getApplicationContext())
-                    .getWorkInfoByIdLiveData(renderRequest.getId())
-                    .observeForever(
-                            getObserverForRenderer(progressRender,renderRequest,inputs_from_last_render,which_task_finished));
+            workersForObservers.add(renderRequest);
         }else {
             for (int i = 0; i < num_of_workers; i++) {
                 Data.Builder b = new Data.Builder();
@@ -663,9 +663,22 @@ public class VideoProj implements Parcelable {
                         .setInputData(b.build())
                         .build();
                 WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork("Render" + i, ExistingWorkPolicy.REPLACE, renderRequest);
+                workersForObservers.add(renderRequest);
+            }
+            for(OneTimeWorkRequest renderRequest:workersForObservers){
                 WorkManager.getInstance(context.getApplicationContext())
                         .getWorkInfoByIdLiveData(renderRequest.getId())
-                        .observeForever(getObserverForRenderer(progressRender,renderRequest,inputs_from_last_render,which_task_finished));
+                        .observeForever(
+                                getObserverForRenderer(
+                                        progressRender,
+                                        renderRequest,
+                                        inputs_from_last_render,
+                                        which_task_finished,
+                                        workersForObservers
+                                )
+                        )
+                ;
+
             }
         }
     }
@@ -673,31 +686,33 @@ public class VideoProj implements Parcelable {
     private Observer<WorkInfo> getObserverForRenderer(ProgressRender progressRender,
                                                       OneTimeWorkRequest renderRequest,
                                                       List<String>[] inputs_from_last_render,
-                                                      boolean[] which_task_finished){
+                                                      boolean[] which_task_finished,
+                                                      List<OneTimeWorkRequest> allWorkRequests){
         return new Observer<WorkInfo>() {
             @Override
             public void onChanged(WorkInfo workInfo) {
                 if (workInfo != null) {
                     Data progressD = workInfo.getState().isFinished() ? workInfo.getOutputData() : workInfo.getProgress();
 
-                    int whichRenderer=progressD.getInt(ProgressRender.progressRenderNumberOfRenderer,-1);
+                    int whichRenderer = progressD.getInt(ProgressRender.progressRenderNumberOfRenderer, -1);
                     int progress = progressD.getInt(ProgressRender.progressRenderState, -1);
                     int max = progressD.getInt(ProgressRender.progressRenderMax, -1);
                     boolean finished = progressD.getBoolean(ProgressRender.progressRenderFinished, false);
-                    boolean success=progressD.getBoolean(Renderer.dataSUCCES,false);
-                    ProgressRender.FunctionToCall functionToCall=ProgressRender.FunctionToCall.values()[progressD.getInt(ProgressRender.progressRenderFunctionToCall,ProgressRender.FunctionToCall.nothing.ordinal())];
-                    String resultString=progressD.getString(Renderer.dataExtraImagesFromThisRendererStringListFileName);
-                    if(progressRender!=null)switch (functionToCall){
-                        case nothing:break;
+                    boolean success = progressD.getBoolean(Renderer.dataSUCCES, false);
+                    ProgressRender.FunctionToCall functionToCall = ProgressRender.FunctionToCall.values()[progressD.getInt(ProgressRender.progressRenderFunctionToCall, ProgressRender.FunctionToCall.nothing.ordinal())];
+                    String resultString = progressD.getString(Renderer.dataExtraImagesFromThisRendererStringListFileName);
+                    if (progressRender != null) switch (functionToCall) {
+                        case nothing:
+                            break;
                         case updateProgressOfSavingVideo:
-                            progressRender.updateProgressOfSavingVideo(progress,max,finished);
+                            progressRender.updateProgressOfSavingVideo(progress, max, finished);
                             break;
                         case updateProgressOfX:
-                            if(whichRenderer!=-1)
-                                progressRender.updateProgressOfX(whichRenderer,progress,max,finished);
+                            if (whichRenderer != -1)
+                                progressRender.updateProgressOfX(whichRenderer, progress, max, finished);
                             break;
                         case instantiateProgressesForRendering:
-                            if(whichRenderer!=-1)
+                            if (whichRenderer != -1)
                                 progressRender.instantiateProgressesForRendering(whichRenderer);
                             break;
                     }
@@ -706,18 +721,29 @@ public class VideoProj implements Parcelable {
                                 .getInstance(context.getApplicationContext())
                                 .getWorkInfoByIdLiveData(renderRequest.getId())
                                 .removeObserver(this);
-                        if(success && whichRenderer!=-1 && resultString!=null && !resultString.isEmpty()){
+                        if (success && whichRenderer != -1 && resultString != null && !resultString.isEmpty()) {
                             try {
-                                inputs_from_last_render[whichRenderer]=
+                                inputs_from_last_render[whichRenderer] =
                                         StringListParcelable.from(new File(resultString)).getStringList();
-                                which_task_finished[whichRenderer]=true;
-                                startLastRender(which_task_finished,inputs_from_last_render,progressRender);
+                                which_task_finished[whichRenderer] = true;
+                                startLastRender(which_task_finished, inputs_from_last_render, progressRender);
                             } catch (IOException e) {
                                 utils.LogE(e);
                             }
-                        }else if(!success && whichRenderer!=-1){
-                            which_task_finished[whichRenderer]=true;
-                            progressRender.xFailed(whichRenderer);
+                        } else if (!success && whichRenderer != -1) {
+                            which_task_finished[whichRenderer] = true;
+                            if (progressRender != null) progressRender.xFailed(whichRenderer);
+                            utils.LogI("Cancelling all Workers!");
+                            for (OneTimeWorkRequest request : allWorkRequests) {
+                                WorkManager.getInstance(context.getApplicationContext())
+                                        .cancelWorkById(request.getId());
+                            }
+                        }else{
+                            utils.LogI("Cancelling all Workers!");
+                            for (OneTimeWorkRequest request : allWorkRequests) {
+                                WorkManager.getInstance(context.getApplicationContext())
+                                        .cancelWorkById(request.getId());
+                            }
                         }
                     }
                 }

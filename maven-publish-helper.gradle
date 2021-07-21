@@ -25,21 +25,32 @@
  * See also: https://developer.android.com/studio/build/maven-publish-plugin
  *
  * @Author Robert Pösel
+ * @Author hlvs-apps
  * @Version 1.5
  * @Date 3.3.2020
  */
 
 apply plugin: 'maven-publish'
 
+
+// To build to Maven Local ./gradlew build publishToMavenLocal
+
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     android.libraryVariants.all { variant ->
-        if (variant.name == 'release') {
+        if (variant.name == 'release' || variant.name == 'debug') {
             owner.classpath += variant.javaCompileProvider.get().classpath
         }
     }
     exclude '**/R.html', '**/R.*.html', '**/index.html'
+}
+
+tasks.withType(Javadoc) {
+    failOnError false
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addStringOption('encoding', 'UTF-8')
+    options.addStringOption('charSet', 'UTF-8')
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {

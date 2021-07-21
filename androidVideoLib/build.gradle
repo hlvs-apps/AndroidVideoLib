@@ -37,7 +37,7 @@ android {
 
     buildTypes {
         release {
-            debuggable true
+            debuggable false
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -78,6 +78,7 @@ publishing {
             // Specify own groupId as package name of your library,
             // otherwise it would just use project's name (=name of the root directory) by default.
             groupId 'de.hlvsapps.androidvideolib'
+            artifactId = 'androidVideoLib'
 
             // Specify custom artifactId if needed,
             // otherwise it would use module's name by default.
@@ -89,6 +90,7 @@ publishing {
         }
         debug(MavenPublication){
             groupId 'de.hlvsapps.androidvideolib'
+            artifactId = 'androidVideoLib-debug'
         }
     }
 }

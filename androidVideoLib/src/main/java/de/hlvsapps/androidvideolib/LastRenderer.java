@@ -139,17 +139,22 @@ public class LastRenderer extends Worker {
 
     @NotNull
     public Result doWork() {
-            try {
-                return lastRender();
-            } catch (Exception e) {
-                utils.LogE(e);
-                return Result.failure(new Data.Builder()
-                        .putBoolean(keyFailedExtraData,true)
-                        .putBoolean(ProgressRender.progressRenderFinished,true)
-                        .putInt(ProgressRender.progressRenderState,1)
-                        .putInt(ProgressRender.progressRenderMax,1)
-                        .build());
-            }
+        PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
+        final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
+        wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
+        try {
+            return lastRender();
+        } catch (Exception e) {
+            utils.LogE(e);
+            return Result.failure(new Data.Builder()
+                    .putBoolean(keyFailedExtraData,true)
+                    .putBoolean(ProgressRender.progressRenderFinished,true)
+                    .putInt(ProgressRender.progressRenderState,1)
+                    .putInt(ProgressRender.progressRenderMax,1)
+                    .build());
+        } finally {
+            wakeLock.release();
+        }
     }
     
     public static List<String> getRealList(List<String>[] inputs){
@@ -159,9 +164,6 @@ public class LastRenderer extends Worker {
     }
     
     private Result lastRender(){
-        PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
-        final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
-        wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
 
         setForegroundAsync(createForegroundInfo(0,1,true));
 
@@ -202,7 +204,6 @@ public class LastRenderer extends Worker {
             if(d!=null)d.close();
             new Handler().postDelayed(() -> {
                 messageInfoFinished();
-                wakeLock.release();
                 utils.LogD("Complete Finished");
             },100);
             return Result.success(new Data.Builder()
@@ -255,7 +256,6 @@ public class LastRenderer extends Worker {
             }catch (Exception e){
                 utils.LogE(e);
             }
-            wakeLock.release();
         }
     }
 

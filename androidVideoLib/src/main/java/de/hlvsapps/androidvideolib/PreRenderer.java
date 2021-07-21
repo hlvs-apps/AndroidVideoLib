@@ -65,13 +65,13 @@ import java.util.List;
 import static android.content.Context.POWER_SERVICE;
 
 /**
- * <p>{@link Worker} implementation to save the Pictures of the Videos contained in {@link de.hlvsapps.androidvideolib.UriIdentifierPair.UriIdentifierPairList}</p>
+ * <p>{@link Worker} implementation to save the Pictures of the Videos contained in {@link UriIdentifierPair.UriIdentifierPairList}</p>
  * <p>Usage:</p>
  * <p><pre><code>
  *             OneTimeWorkRequest renderRequest =new OneTimeWorkRequest.Builder(PreRenderer.class)
  *                 .setConstraints(constraints)
  *                 .setInputData((new Data.Builder())
- *                         .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(<strong>(Your {@link de.hlvsapps.androidvideolib.UriIdentifierPair.UriIdentifierPairList})</strong>>)))
+ *                         .putByteArray(PreRenderer.parcelableByteArrayListUriIdentifierPair,utils.marshall(UriIdentifierPair.UriIdentifierPairList.from(<strong>(Your {@link UriIdentifierPair.UriIdentifierPairList})</strong>)))
  *                         .putByteArray(PreRenderer.serializableByteArrayScaleFactor, SerializationUtils.serialize(scaleFactor))
  *                         .build())
  *                 .build();
@@ -154,20 +154,22 @@ public class PreRenderer extends Worker {
 
     @NotNull
     public ListenableWorker.Result doWork(){
-        try {
-                return preRender();
-            } catch (Exception e) {
-                utils.LogE(e);
-                return ListenableWorker.Result.failure();
-            }
-    }
-
-
-    private Result preRender() {
         //Enable Wakelook
         PowerManager powerManager = (PowerManager) context.getSystemService(POWER_SERVICE);
         final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
         wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
+        try {
+            return preRender();
+        } catch (Exception e) {
+            utils.LogE(e);
+            return ListenableWorker.Result.failure();
+        }finally {
+            wakeLock.release();
+        }
+    }
+
+
+    private Result preRender() {
 
 
         setForegroundAsync(createForegroundInfo(0,1,true,false));
@@ -256,7 +258,6 @@ public class PreRenderer extends Worker {
             }
         }catch (Exception e){
             utils.LogE(e);
-            wakeLock.release();
             try {
                 setNotificationProgress(1, 1, true);
                 //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
@@ -267,7 +268,6 @@ public class PreRenderer extends Worker {
             }catch (Exception ignored){}
             throw e;
         }
-        try {
             setNotificationProgress(1, 1, true);
             setProgressAsync(new Data.Builder().putInt(ProgressPreRender.progressPreRenderState, 1)
                     .putInt(ProgressPreRender.progressPreRenderMax, 1)
@@ -275,9 +275,6 @@ public class PreRenderer extends Worker {
                     .build());
             //setProgressAsync(new Data.Builder().putInt("progress", -1).build());
             return Result.success();
-        }finally {
-            wakeLock.release();
-        }
     }
 
     @NonNull

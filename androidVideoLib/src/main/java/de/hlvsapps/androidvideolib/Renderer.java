@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.os.Handler;
 import android.os.PowerManager;
 
 import androidx.annotation.NonNull;
@@ -134,17 +135,17 @@ public class Renderer extends Worker {
         final PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,WAKE_LOCK_ID);
         wakeLock.acquire(/*100*60*1000L /*100 minutes*/);
 
-        setNotificationProgress(1,0);
+        new Handler().post(() -> setNotificationProgress(1,0));
 
         try {
-                return renderSynchronous();
-            } catch (Exception e) {
+            return renderSynchronous();
+        } catch (Exception e) {
                 utils.LogE(e);
                 return Result.failure((new Data.Builder())
                         .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer==-1?0:which_renderer)
                         .putBoolean(dataSUCCES,false)
                         .build());
-            }
+        }
         finally {
             wakeLock.release();
         }
@@ -173,8 +174,23 @@ public class Renderer extends Worker {
             utils.LogD("To2: " + to);
             int actual_num_of_saved_image = 0;
             int max = to - from;
+            setProgressAsync((new Data.Builder())
+                    .putInt(ProgressRender.progressRenderNumberOfRenderer,which_renderer)
+                    .putInt(ProgressRender.progressRenderState,0)
+                    .putInt(ProgressRender.progressRenderMax,1)
+                    .putBoolean(ProgressRender.progressRenderFinished,false)
+                    .putInt(ProgressRender.progressRenderFunctionToCall,ProgressRender.FunctionToCall.updateProgressOfX.ordinal())
+                    .putString(dataExtraImagesFromThisRendererStringListFileName,"")
+                    .build()
+            );
             List<String> inputs_from_this_render=new ArrayList<>(max*2);
             for (int i = from; i < to; i++) {
+
+                if(isStopped()){
+                    utils.LogI("Cancelled worker"+which_renderer+". Returning!");
+                    return Result.failure();
+                }
+
                 int actual_state = i - from;
                 utils.LogI(String.valueOf(actual_state));
                 setProgressAsync((new Data.Builder())
@@ -188,6 +204,10 @@ public class Renderer extends Worker {
                 );
                 setNotificationProgress(max,actual_state);
                 for (RenderTaskWrapperWithUriIdentifierPairs wrapper : renderTaskWrapperWithUriIdentifierPairs) {
+                    if(isStopped()){
+                        utils.LogI("Cancelled worker"+which_renderer+". Returning!");
+                        return Result.failure();
+                    }
                     if (i >= wrapper.getFrameInProjectFrom()) {
                         List<VideoBitmap> bitmap0 = new ArrayList<>();
                         List<VideoBitmap> bitmap1 = new ArrayList<>();
@@ -209,8 +229,16 @@ public class Renderer extends Worker {
                                 //utils.LogD(fileName + i_for_video + " not added because it should not exist");
                             }
                         }
+                        if(isStopped()){
+                            utils.LogI("Cancelled worker"+which_renderer+". Returning!");
+                            return Result.failure();
+                        }
                         try {
                             for (Bitmap bitmap : wrapper.getRenderTask().render(bitmap0, bitmap1, i)) {
+                                if(isStopped()){
+                                    utils.LogI("Cancelled worker"+which_renderer+". Returning!");
+                                    return Result.failure();
+                                }
                                 try {
                                     if (bitmap != null) {
                                         String id1 = identifierBitmapInVideoBitmaps(bitmap0, bitmap);
@@ -255,6 +283,13 @@ public class Renderer extends Worker {
         }
     }
 
+    @Override
+    public void onStopped() {
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(NOTIFICATION_ID+which_renderer);
+        super.onStopped();
+    }
+
     @NonNull
     private ForegroundInfo createForegroundInfo(int progress, int max) {
         // Build a notification using bytesRead and contentLength
@@ -285,7 +320,6 @@ public class Renderer extends Worker {
         if(pendingIntentForNotification!=null){
             notificationBuilder=notificationBuilder.setContentIntent(pendingIntentForNotification);
         }
-
 
         return new ForegroundInfo(NOTIFICATION_ID+which_renderer,notificationBuilder.build());
     }
